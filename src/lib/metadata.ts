@@ -264,7 +264,7 @@ async function cleanPdf(file: File): Promise<Blob> {
   pdf.setKeywords([]);
 
   const saved = await pdf.save();
-  return new Blob([saved], { type: "application/pdf" });
+  return new Blob([saved.buffer as ArrayBuffer], { type: "application/pdf" });
 }
 
 async function cleanDocx(file: File): Promise<Blob> {
