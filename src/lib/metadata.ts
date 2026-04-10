@@ -222,7 +222,7 @@ async function extractMp4Metadata(
   const warnings: string[] = [];
 
   try {
-    const { default: MP4Box } = await import("mp4box");
+    const MP4Box = await import("mp4box");
     const buffer = await file.arrayBuffer();
     (buffer as any).fileStart = 0;
 
@@ -374,7 +374,7 @@ async function cleanMp3(file: File): Promise<Blob> {
   }
 
   const saved = mp3tag.save({ id3v1: { include: false }, id3v2: { include: false } });
-  return new Blob([saved], { type: "audio/mpeg" });
+  return new Blob([new Uint8Array(saved as any)], { type: "audio/mpeg" });
 }
 
 async function cleanMp4(_file: File): Promise<Blob> {
