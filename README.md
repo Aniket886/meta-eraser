@@ -14,6 +14,11 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-Custom%20UI-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20Functions-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 
+<br />
+<br />
+
+<img src="./Screenshot.png" alt="MetaClean app preview" width="100%" />
+
 </div>
 
 ---
