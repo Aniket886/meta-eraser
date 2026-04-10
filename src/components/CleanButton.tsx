@@ -27,25 +27,25 @@ const CleanButton = ({
       >
         <Sparkles className="clean-btn-svg" />
         <span className="clean-btn-txt-wrapper">
-          <span className="clean-btn-txt-1">
+          <span className="clean-btn-txt-1" style={{ whiteSpace: "nowrap" }}>
             {letters.map((letter, i) => (
               <span
                 key={`l1-${i}`}
                 className="clean-btn-letter"
                 style={{ animationDelay: `${i * 0.08}s` }}
               >
-                {letter}
+                {letter === " " ? "\u00A0" : letter}
               </span>
             ))}
           </span>
-          <span className="clean-btn-txt-2">
+          <span className="clean-btn-txt-2" style={{ whiteSpace: "nowrap" }}>
             {activeLetters.map((letter, i) => (
               <span
                 key={`l2-${i}`}
                 className="clean-btn-letter"
                 style={{ animationDelay: `${i * 0.08}s` }}
               >
-                {letter}
+                {letter === " " ? "\u00A0" : letter}
               </span>
             ))}
           </span>
