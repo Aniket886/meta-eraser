@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Shield, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const Navbar = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdminCheck();
 
   const links = [
     { to: "/", label: "Home" },
@@ -16,6 +18,7 @@ const Navbar = () => {
     { to: "/api", label: "API" },
     { to: "/settings", label: "Settings" },
     { to: "/install", label: "Install" },
+    ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
   ];
 
   return (
