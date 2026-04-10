@@ -63,21 +63,21 @@ const Install = () => {
       <main className="flex-1 pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-5xl font-heading font-bold mb-4">
+            <h1 className="text-3xl md:text-5xl font-heading font-bold mb-4 animate-fade-in-up">
               Install MetaClean
             </h1>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-muted-foreground max-w-xl mx-auto animate-fade-in-up stagger-1">
               Use MetaClean as a desktop or mobile app. Works fully offline — all
               processing happens on your device.
             </p>
 
-            <div className="mt-8">
+            <div className="mt-8 animate-scale-in stagger-2">
               {installed ? (
                 <Button size="lg" disabled className="glow-primary">
                   <Check className="h-5 w-5 mr-2" /> Installed
                 </Button>
               ) : deferredPrompt ? (
-                <Button size="lg" className="glow-primary" onClick={handleInstall}>
+                <Button size="lg" className="glow-primary hover-lift" onClick={handleInstall}>
                   <Download className="h-5 w-5 mr-2" /> Install App
                 </Button>
               ) : (
@@ -89,18 +89,22 @@ const Install = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {platforms.map((p) => (
-              <Card key={p.title} className="glass">
+            {platforms.map((p, i) => (
+              <Card key={p.title} className={`glass hover-lift animate-fade-in-up stagger-${i + 1}`}>
                 <CardHeader className="text-center">
-                  <p.icon className="h-10 w-10 text-primary mx-auto mb-2" />
+                  <p.icon className="h-10 w-10 text-primary mx-auto mb-2 transition-transform duration-300 hover:scale-110" />
                   <CardTitle className="text-lg">{p.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ol className="space-y-3">
-                    {p.steps.map((step, i) => (
-                      <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
+                    {p.steps.map((step, j) => (
+                      <li
+                        key={j}
+                        className="flex items-start gap-3 text-sm text-muted-foreground animate-fade-in"
+                        style={{ animationDelay: `${(i * 3 + j) * 0.05 + 0.2}s` }}
+                      >
                         <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
-                          {i + 1}
+                          {j + 1}
                         </span>
                         {step}
                       </li>
@@ -111,7 +115,7 @@ const Install = () => {
             ))}
           </div>
 
-          <div className="mt-12 text-center glass rounded-lg p-8">
+          <div className="mt-12 text-center glass rounded-lg p-8 animate-fade-in-up stagger-4">
             <h2 className="text-xl font-heading font-semibold mb-2">Why install?</h2>
             <p className="text-muted-foreground text-sm max-w-lg mx-auto">
               The installed app works offline, opens instantly, and runs in its own

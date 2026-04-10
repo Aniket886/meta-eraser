@@ -94,7 +94,7 @@ const Settings = () => {
       <Navbar />
       <main className="flex-1 pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-3xl">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-8 animate-fade-in">
             <Settings2 className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-heading font-bold">Privacy Settings</h1>
@@ -103,14 +103,14 @@ const Settings = () => {
           </div>
 
           {/* Presets */}
-          <Card className="glass mb-6">
+          <Card className="glass mb-6 animate-fade-in-up stagger-1">
             <CardHeader>
               <CardTitle className="text-lg">Presets</CardTitle>
               <CardDescription>Quick-apply a privacy profile.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
               {Object.entries(PRESETS).map(([key, preset]) => (
-                <Button key={key} variant="outline" size="sm" onClick={() => applyPreset(key)}>
+                <Button key={key} variant="outline" size="sm" className="hover-lift" onClick={() => applyPreset(key)}>
                   <Badge variant="secondary" className="mr-2">{preset.label}</Badge>
                   {preset.description}
                 </Button>
@@ -119,14 +119,18 @@ const Settings = () => {
           </Card>
 
           {/* Toggles */}
-          <Card className="glass mb-6">
+          <Card className="glass mb-6 animate-fade-in-up stagger-2">
             <CardHeader>
               <CardTitle className="text-lg">Metadata Categories</CardTitle>
               <CardDescription>Enable to strip, disable to keep.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              {TOGGLE_OPTIONS.map((opt) => (
-                <div key={opt.key} className="flex items-center justify-between gap-4">
+              {TOGGLE_OPTIONS.map((opt, i) => (
+                <div
+                  key={opt.key}
+                  className={`flex items-center justify-between gap-4 animate-fade-in`}
+                  style={{ animationDelay: `${(i + 1) * 0.05}s` }}
+                >
                   <div>
                     <Label className="text-sm font-medium">{opt.label}</Label>
                     <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
@@ -134,6 +138,7 @@ const Settings = () => {
                   <Switch
                     checked={settings[opt.key] as boolean}
                     onCheckedChange={(checked) => update({ [opt.key]: checked })}
+                    className="transition-all duration-200"
                   />
                 </div>
               ))}
@@ -141,7 +146,7 @@ const Settings = () => {
           </Card>
 
           {/* Retention */}
-          <Card className="glass mb-6">
+          <Card className="glass mb-6 animate-fade-in-up stagger-3">
             <CardHeader>
               <CardTitle className="text-lg">Data Retention</CardTitle>
               <CardDescription>How long files stay before auto-delete.</CardDescription>
@@ -164,19 +169,19 @@ const Settings = () => {
           </Card>
 
           {/* Import / Export / Reset */}
-          <Card className="glass">
+          <Card className="glass animate-fade-in-up stagger-4">
             <CardHeader>
               <CardTitle className="text-lg">Team Sharing</CardTitle>
               <CardDescription>Export or import settings as JSON for your team.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
-              <Button variant="outline" size="sm" onClick={handleExport}>
+              <Button variant="outline" size="sm" className="hover-lift" onClick={handleExport}>
                 <Download className="h-4 w-4 mr-1" /> Export
               </Button>
-              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+              <Button variant="outline" size="sm" className="hover-lift" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="h-4 w-4 mr-1" /> Import
               </Button>
-              <Button variant="outline" size="sm" onClick={handleReset}>
+              <Button variant="outline" size="sm" className="hover-lift" onClick={handleReset}>
                 <RotateCcw className="h-4 w-4 mr-1" /> Reset Defaults
               </Button>
               <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />

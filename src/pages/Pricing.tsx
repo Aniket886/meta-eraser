@@ -27,29 +27,29 @@ const Pricing = () => (
     <section className="pt-32 pb-20 px-4">
       <div className="container mx-auto max-w-5xl">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-heading font-bold mb-4">
+          <h1 className="text-4xl md:text-5xl font-heading font-bold mb-4 animate-fade-in-up">
             Simple pay-per-use pricing
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto animate-fade-in-up stagger-1">
             Buy credits and use them whenever you need. 1 credit = 1 file cleaned.
             No subscriptions, no hidden fees.
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground bg-accent/50 rounded-full px-4 py-2">
+          <div className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground bg-accent/50 rounded-full px-4 py-2 animate-fade-in stagger-2">
             <Sparkles className="h-4 w-4 text-primary" />
             3 free cleans per day — no account needed
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {packs.map((p) => (
+          {packs.map((p, i) => (
             <div
               key={p.credits}
-              className={`glass rounded-lg p-6 flex flex-col relative ${
+              className={`glass rounded-lg p-6 flex flex-col relative hover-lift animate-fade-in-up stagger-${Math.min(i + 1, 8)} ${
                 p.popular ? "border-primary/50 glow-primary-sm" : ""
               }`}
             >
               {p.popular && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 animate-scale-in">Most Popular</Badge>
               )}
               <div className="text-4xl font-heading font-bold text-foreground mb-1">
                 {p.credits}
@@ -59,18 +59,21 @@ const Pricing = () => (
                 {p.price}
               </div>
               <div className="text-xs text-muted-foreground mb-6">{p.perCredit} per credit</div>
-              <Button className={`mt-auto ${p.popular ? "glow-primary-sm" : ""}`} variant={p.popular ? "default" : "outline"}>
+              <Button className={`mt-auto hover-lift ${p.popular ? "glow-primary-sm" : ""}`} variant={p.popular ? "default" : "outline"}>
                 Buy Credits
               </Button>
             </div>
           ))}
         </div>
 
-        <div className="glass rounded-lg p-8 max-w-2xl mx-auto">
+        <div className="glass rounded-lg p-8 max-w-2xl mx-auto animate-fade-in-up">
           <h3 className="text-xl font-heading font-semibold mb-4">Every credit includes</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {included.map((item) => (
-              <div key={item} className="flex items-start gap-2">
+            {included.map((item, i) => (
+              <div
+                key={item}
+                className={`flex items-start gap-2 animate-fade-in stagger-${Math.min(i + 1, 8)}`}
+              >
                 <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <span className="text-sm text-muted-foreground">{item}</span>
               </div>

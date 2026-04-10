@@ -81,7 +81,6 @@ const Dashboard = () => {
     for (const job of newJobs) {
       try {
         if (job.isZip) {
-          // For ZIP files, mark as scanned immediately (processing happens on clean)
           setFiles((prev) =>
             prev.map((f) =>
               f.id === job.id ? { ...f, status: "scanned" as const, warnings: ["ZIP archive — click Clean to process all files inside."] } : f
@@ -210,12 +209,12 @@ const Dashboard = () => {
       <main className="flex-1 pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-5xl">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 animate-fade-in">
             <div>
               <h1 className="text-3xl font-heading font-bold">Dashboard</h1>
               <p className="text-muted-foreground mt-1">Upload files and remove metadata.</p>
             </div>
-            <div className="glass rounded-lg px-4 py-3 flex items-center gap-3">
+            <div className="glass rounded-lg px-4 py-3 flex items-center gap-3 animate-scale-in stagger-1">
               <Coins className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-sm text-muted-foreground">Credits</div>
@@ -225,13 +224,13 @@ const Dashboard = () => {
           </div>
 
           {/* Upload Zone */}
-          <div className="mb-8">
+          <div className="mb-8 animate-fade-in-up stagger-2">
             <FileDropZone onFilesSelected={handleFiles} />
           </div>
 
           {/* Batch Actions */}
           {files.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 mb-6">
+            <div className="flex flex-wrap items-center gap-3 mb-6 animate-fade-in">
               <h2 className="text-xl font-heading font-semibold mr-auto">
                 Files <span className="text-muted-foreground text-sm font-normal">({files.length})</span>
               </h2>
@@ -241,17 +240,17 @@ const Dashboard = () => {
               )}
 
               {scannedCount > 0 && (
-                <Button size="sm" className="glow-primary-sm" onClick={handleCleanAll}>
+                <Button size="sm" className="glow-primary-sm animate-scale-in" onClick={handleCleanAll}>
                   <Sparkles className="h-4 w-4 mr-1" /> Clean All ({scannedCount})
                 </Button>
               )}
               {cleanedCount > 0 && (
-                <Button size="sm" variant="outline" onClick={handleDownloadAll}>
+                <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAll}>
                   <FileDown className="h-4 w-4 mr-1" /> Download All ({cleanedCount})
                 </Button>
               )}
               {auditCount > 0 && (
-                <Button size="sm" variant="outline" onClick={handleDownloadAllAudits}>
+                <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAllAudits}>
                   <ClipboardList className="h-4 w-4 mr-1" /> Audit Reports ({auditCount})
                 </Button>
               )}
@@ -261,11 +260,16 @@ const Dashboard = () => {
           {/* File Queue */}
           {files.length > 0 && (
             <div className="space-y-4">
-              {files.map((file) => (
+              {files.map((file, i) => (
                 <Collapsible key={file.id}>
-                  <div className="glass rounded-lg overflow-hidden">
+                  <div
+                    className={`glass rounded-lg overflow-hidden transition-all duration-300 hover:border-primary/20 animate-fade-in-up`}
+                    style={{ animationDelay: `${Math.min(i * 0.05, 0.3)}s` }}
+                  >
                     <div className="flex items-center gap-4 p-4">
-                      {file.isZip ? <Archive className="h-5 w-5 text-primary" /> : getFileIcon(file.type)}
+                      <div className="transition-transform duration-200 hover:scale-110">
+                        {file.isZip ? <Archive className="h-5 w-5 text-primary" /> : getFileIcon(file.type)}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium truncate">{file.name}</span>
@@ -273,25 +277,27 @@ const Dashboard = () => {
                           {file.isZip && <Badge variant="secondary" className="text-xs">ZIP</Badge>}
                         </div>
                         {(file.status === "scanning" || file.status === "cleaning") && (
-                          <Progress value={60} className="mt-2 h-1.5" />
+                          <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full bg-primary rounded-full animate-progress-fill" />
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                         <Clock className="h-3 w-3" />
                         {formatTimeLeft(file.addedAt)}
                       </div>
-                      <Badge className={statusColors[file.status]}>{file.status}</Badge>
+                      <Badge className={`${statusColors[file.status]} transition-colors duration-300`}>{file.status}</Badge>
                       {file.warnings && file.warnings.length > 0 && (
-                        <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+                        <AlertTriangle className="h-4 w-4 text-warning shrink-0 animate-pulse" />
                       )}
                       {file.status === "scanned" && (
-                        <Button size="sm" className="glow-primary-sm shrink-0" onClick={() => handleClean(file.id)}>
+                        <Button size="sm" className="glow-primary-sm shrink-0 hover-lift" onClick={() => handleClean(file.id)}>
                           <Sparkles className="h-4 w-4 mr-1" /> Clean
                         </Button>
                       )}
                       {file.status === "cleaned" && (
                         <>
-                          <Button size="sm" variant="outline" className="shrink-0" onClick={() => handleDownload(file)}>
+                          <Button size="sm" variant="outline" className="shrink-0 hover-lift" onClick={() => handleDownload(file)}>
                             <Download className="h-4 w-4 mr-1" /> Download
                           </Button>
                           {file.auditReport && (
@@ -302,19 +308,19 @@ const Dashboard = () => {
                         </>
                       )}
                       <CollapsibleTrigger asChild>
-                        <Button size="icon" variant="ghost" className="shrink-0">
+                        <Button size="icon" variant="ghost" className="shrink-0 transition-transform duration-200 data-[state=open]:rotate-180">
                           <ChevronDown className="h-4 w-4" />
                         </Button>
                       </CollapsibleTrigger>
-                      <Button size="icon" variant="ghost" className="shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file.id)}>
+                      <Button size="icon" variant="ghost" className="shrink-0 text-muted-foreground hover:text-destructive transition-colors duration-200" onClick={() => removeFile(file.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
 
-                    <CollapsibleContent>
+                    <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
                       <div className="border-t border-border/50 p-4">
                         {file.warnings && file.warnings.length > 0 && (
-                          <div className="flex items-start gap-2 bg-warning/10 text-warning rounded-md p-3 mb-4 text-sm">
+                          <div className="flex items-start gap-2 bg-warning/10 text-warning rounded-md p-3 mb-4 text-sm animate-fade-in">
                             <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                             <div>{file.warnings.join(" ")}</div>
                           </div>
@@ -322,7 +328,7 @@ const Dashboard = () => {
 
                         {/* Audit summary */}
                         {file.auditReport && (
-                          <div className="flex gap-4 mb-4 text-sm">
+                          <div className="flex gap-4 mb-4 text-sm animate-fade-in">
                             <span className="text-success">✓ {file.auditReport.summary.removed} removed</span>
                             <span className="text-muted-foreground">• {file.auditReport.summary.kept} kept</span>
                           </div>
@@ -334,7 +340,11 @@ const Dashboard = () => {
                             <h4 className="text-sm font-medium mb-2">Files in archive ({file.zipEntries.length})</h4>
                             <div className="space-y-2">
                               {file.zipEntries.map((entry, i) => (
-                                <div key={i} className="flex items-center gap-3 text-sm bg-accent/30 rounded-md px-3 py-2">
+                                <div
+                                  key={i}
+                                  className="flex items-center gap-3 text-sm bg-accent/30 rounded-md px-3 py-2 animate-fade-in"
+                                  style={{ animationDelay: `${i * 0.03}s` }}
+                                >
                                   <span className="truncate flex-1">{entry.name}</span>
                                   <span className="text-xs text-muted-foreground">{formatSize(entry.size)}</span>
                                   {entry.supported ? (
@@ -365,8 +375,12 @@ const Dashboard = () => {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {Object.entries(file.metadata).map(([key, val]) => (
-                                <TableRow key={key}>
+                              {Object.entries(file.metadata).map(([key, val], i) => (
+                                <TableRow
+                                  key={key}
+                                  className="animate-fade-in"
+                                  style={{ animationDelay: `${i * 0.02}s` }}
+                                >
                                   <TableCell className="font-medium">{key}</TableCell>
                                   <TableCell className="text-muted-foreground max-w-xs truncate">{val.value}</TableCell>
                                   <TableCell>
@@ -390,7 +404,7 @@ const Dashboard = () => {
           )}
 
           {files.length === 0 && (
-            <div className="text-center text-muted-foreground py-16">
+            <div className="text-center text-muted-foreground py-16 animate-fade-in stagger-3">
               <p className="text-lg">No files yet. Upload a file to get started.</p>
             </div>
           )}
