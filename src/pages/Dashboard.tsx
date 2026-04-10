@@ -176,7 +176,7 @@ const Dashboard = () => {
       );
       toast({ title: "Cleaning failed", description: `Could not clean ${file.name}.`, variant: "destructive" });
     }
-  }, [files, toast, settings]);
+  }, [files, toast, settings, user, credits]);
 
   const handleCleanAll = useCallback(async () => {
     const scannedFiles = files.filter((f) => f.status === "scanned");
