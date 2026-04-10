@@ -204,14 +204,38 @@ const Dashboard = () => {
     if (reports.length) downloadBatchAuditReport(reports);
   }, [files]);
 
-  const handleDownloadPdfReport = useCallback((report: AuditReport) => {
-    generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email });
-  }, [user]);
+  const fetchAiInsights = useCallback(async (reports: AuditReport[]): Promise<string | undefined> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-report-insights', {
+        body: { reports },
+      });
+      if (error) {
+        console.error('AI insights error:', error);
+        toast({ title: "AI insights unavailable", description: "Generating PDF without AI analysis.", variant: "destructive" });
+        return undefined;
+      }
+      return data?.insights;
+    } catch (e) {
+      console.error('AI insights fetch failed:', e);
+      return undefined;
+    }
+  }, [toast]);
 
-  const handleDownloadAllPdfReports = useCallback(() => {
+  const handleDownloadPdfReport = useCallback(async (report: AuditReport) => {
+    toast({ title: "Generating PDF…", description: "Fetching AI insights from Groq…" });
+    const insights = await fetchAiInsights([report]);
+    generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
+    toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+  }, [user, fetchAiInsights, toast]);
+
+  const handleDownloadAllPdfReports = useCallback(async () => {
     const reports = files.filter((f) => f.auditReport).map((f) => f.auditReport!);
-    if (reports.length) generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email });
-  }, [files, user]);
+    if (!reports.length) return;
+    toast({ title: "Generating PDF…", description: "Fetching AI insights from Groq…" });
+    const insights = await fetchAiInsights(reports);
+    generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
+    toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+  }, [files, user, fetchAiInsights, toast]);
 
   const handleDownload = useCallback((file: FileJob) => {
     if (!file.cleanedBlob) return;
