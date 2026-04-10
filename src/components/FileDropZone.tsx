@@ -23,6 +23,12 @@ const ACCEPTED_TYPES = [
   "application/x-zip-compressed",
 ];
 
+const isAcceptedFile = (file: File): boolean => {
+  if (ACCEPTED_TYPES.includes(file.type)) return true;
+  const ext = "." + file.name.split(".").pop()?.toLowerCase();
+  return ACCEPTED_EXTENSIONS.includes(ext);
+};
+
 const ACCEPTED_EXTENSIONS = [
   ".jpg", ".jpeg", ".png", ".tiff", ".tif", ".heic", ".heif",
   ".pdf", ".docx", ".xlsx", ".pptx",
@@ -53,9 +59,7 @@ const FileDropZone = ({ onFilesSelected, disabled, compact }: FileDropZoneProps)
       e.preventDefault();
       setIsDragging(false);
       if (disabled) return;
-      const files = Array.from(e.dataTransfer.files).filter((f) =>
-        ACCEPTED_TYPES.includes(f.type)
-      );
+      const files = Array.from(e.dataTransfer.files).filter(isAcceptedFile);
       if (files.length) onFilesSelected(files);
     },
     [onFilesSelected, disabled]
@@ -63,9 +67,7 @@ const FileDropZone = ({ onFilesSelected, disabled, compact }: FileDropZoneProps)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files).filter((f) =>
-        ACCEPTED_TYPES.includes(f.type)
-      );
+      const files = Array.from(e.target.files).filter(isAcceptedFile);
       if (files.length) onFilesSelected(files);
     }
   };
