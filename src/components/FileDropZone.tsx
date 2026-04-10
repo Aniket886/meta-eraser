@@ -1,14 +1,22 @@
 import { useCallback, useState } from "react";
-import { Upload, FileImage, FileText, File } from "lucide-react";
+import { Upload, FileImage, FileText, File, Music, Film } from "lucide-react";
 
 const ACCEPTED_TYPES = [
   "image/jpeg",
   "image/png",
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "audio/mpeg",
+  "audio/mp3",
+  "video/mp4",
+  "video/quicktime",
 ];
 
-const ACCEPTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".pdf", ".docx"];
+const ACCEPTED_EXTENSIONS = [
+  ".jpg", ".jpeg", ".png", ".pdf", ".docx", ".xlsx", ".pptx", ".mp3", ".mp4", ".mov",
+];
 
 interface FileDropZoneProps {
   onFilesSelected: (files: File[]) => void;
@@ -19,6 +27,8 @@ interface FileDropZoneProps {
 const getFileIcon = (type: string) => {
   if (type.startsWith("image/")) return <FileImage className="h-5 w-5 text-primary" />;
   if (type === "application/pdf") return <FileText className="h-5 w-5 text-destructive" />;
+  if (type.startsWith("audio/")) return <Music className="h-5 w-5 text-primary" />;
+  if (type.startsWith("video/")) return <Film className="h-5 w-5 text-primary" />;
   return <File className="h-5 w-5 text-primary" />;
 };
 
@@ -71,7 +81,7 @@ const FileDropZone = ({ onFilesSelected, disabled, compact }: FileDropZoneProps)
         {isDragging ? "Drop files here" : "Drag & drop files here"}
       </p>
       <p className="text-sm text-muted-foreground mt-1">
-        or click to browse • JPG, PNG, PDF, DOCX
+        or click to browse • JPG, PNG, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV
       </p>
     </label>
   );

@@ -11,11 +11,11 @@ import {
 
 const features = [
   { icon: FileImage, title: "JPG & PNG", desc: "Strip EXIF, GPS, camera data, and more from images." },
-  { icon: FileText, title: "PDF", desc: "Remove author, creation dates, software info from PDFs." },
-  { icon: File, title: "DOCX", desc: "Clean author, revision history, and comments from Word docs." },
-  { icon: Zap, title: "Fast Processing", desc: "Files are processed in seconds, not minutes." },
+  { icon: FileText, title: "PDF & Office", desc: "Remove metadata from PDFs, DOCX, XLSX, and PPTX files." },
+  { icon: File, title: "MP3, MP4 & MOV", desc: "Strip ID3 tags from audio and metadata from video files." },
+  { icon: Zap, title: "Batch Processing", desc: "Upload multiple files and clean them all at once." },
   { icon: Lock, title: "Privacy First", desc: "Files auto-deleted after 1 hour. We never store your data." },
-  { icon: Eye, title: "Full Transparency", desc: "See exactly what metadata exists before and after cleaning." },
+  { icon: Eye, title: "Audit Reports", desc: "Download a full report of what metadata was found and removed." },
 ];
 
 const steps = [
@@ -41,8 +41,8 @@ const Index = () => {
             <span className="text-primary">Protect your privacy.</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
-            Upload JPG, PNG, PDF, or DOCX files and remove hidden metadata — GPS coordinates,
-            author names, software versions, and more. Files auto-delete after 1 hour.
+            Upload images, documents, audio, and video files to remove hidden metadata — GPS
+            coordinates, author names, ID3 tags, and more. Files auto-delete after 1 hour.
           </p>
 
           <div className="max-w-xl mx-auto mb-8">
