@@ -36,6 +36,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/install" element={<Install />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/buy-credits" element={<ProtectedRoute><BuyCredits /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
