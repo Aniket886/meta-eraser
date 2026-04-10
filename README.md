@@ -1,12 +1,12 @@
-# MetaClean
-
-![MetaClean logo](./public/metaclean-logo.png)
-
 <div align="center">
 
-### Strip metadata. Protect privacy. Keep the file.
+<img src="./public/metaclean-logo.png" alt="MetaClean Logo" width="120" />
 
-Client-side metadata cleaner for images, documents, audio, video, text, and ZIP archives.
+# ✨ MetaClean
+
+**Strip metadata. Protect privacy. Keep the file.**
+
+*A powerful, client-side metadata cleaner for images, documents, audio, video, text, and ZIP archives.*
 
 [![Vite](https://img.shields.io/badge/Vite-React%20App-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![React](https://img.shields.io/badge/React-18-149ECA?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
@@ -18,125 +18,92 @@ Client-side metadata cleaner for images, documents, audio, video, text, and ZIP 
 
 ---
 
-## Overview
+## 🌟 Why MetaClean?
 
-MetaClean is a modern metadata removal app built to help users sanitize files before sharing them.
+MetaClean is a modern, privacy-first metadata removal app built to help you sanitize files before sharing them. By processing core cleaning tasks **on-device**, your data stays secure.
 
-It supports:
-
-- Images: `JPG`, `PNG`, `TIFF`, `HEIC`
-- Documents: `PDF`, `DOCX`, `XLSX`, `PPTX`
-- Media: `MP3`, `MP4`, `MOV`
-- Structured text: `JSON`, `XML`, `TXT`
-- Archives: `ZIP` batch processing
-
-The core product direction is straightforward:
-
-- inspect metadata
-- remove what is removable
-- preserve file usability
-- download a clean version
-- generate audit and PDF reports
+* 🔒 **Privacy-First Flow:** Client-side processing ensures your files never leave your device for core cleaning.
+* 🧠 **Smart Preservation:** Strips identifying metadata while preserving structural fields, ensuring your output remains completely usable.
+* 📦 **Batch & Archive Support:** Upload multiple files at once or scan and clean nested workflows right inside `ZIP` archives.
+* 📊 **Comprehensive Reporting:** Generate per-file audit summaries, batch audit downloads, and exportable PDF reports.
+* 📱 **PWA Ready:** Installable, app-like experience for native-feeling utility across devices.
 
 ---
 
-## Why This Project Stands Out
+## 📁 Supported Formats
 
-- Privacy-first flow with on-device processing for core cleaning tasks
-- Batch upload and multi-file cleaning
-- ZIP archive scanning and nested clean workflow
-- Audit reports showing what was found, removed, and kept
-- PDF export for reporting
-- PWA support for installable, app-like usage
-- Credits-based usage model with free daily cleans
-- Admin tooling for credit management
-
----
-
-## Product Snapshot
-
-### Home Experience
-
-- Hero-led landing page with instant upload
-- Quick explanation of supported file types
-- Three-step flow: upload, clean, download
-
-### Dashboard
-
-- Drag-and-drop upload area
-- Scan status per file
-- Clean single files or entire batches
-- Download cleaned files, audit reports, and PDF reports
-- Expiry/retention visibility for uploaded files
-
-### Privacy Controls
-
-- Metadata-aware cleaning workflow
-- Structural fields are preserved where removal would break the file
-- PWA mode avoids attaching account-based report identity details
-
-### Platform Layer
-
-- Supabase-backed auth and credit sync
-- Edge functions for account deletion and AI report insights
+| Category | Formats |
+| :--- | :--- |
+| 🖼️ **Images** | `JPG`, `PNG`, `TIFF`, `HEIC` |
+| 📄 **Documents** | `PDF`, `DOCX`, `XLSX`, `PPTX` |
+| 🎬 **Media** | `MP3`, `MP4`, `MOV` |
+| 📝 **Structured Text** | `JSON`, `XML`, `TXT` |
+| 🗜️ **Archives** | `ZIP` (Batch processing) |
 
 ---
 
-## Tech Stack
-
-| Layer | Tools |
-| --- | --- |
-| Frontend | React, TypeScript, Vite |
-| UI | Tailwind CSS, Radix UI, shadcn-style components, Lucide |
-| State/Data | React Query, React Hook Form |
-| Backend Services | Supabase |
-| File Processing | `exifr`, `pdf-lib`, `jszip`, `mp3tag.js`, `mp4box`, `heic2any`, `jspdf` |
-| Testing | Vitest, Testing Library |
-
----
-
-## Local Setup
+## 🚀 Quick Start
 
 ### Prerequisites
+* Node.js `20+` (recommended)
+* npm `10+`
 
-- Node.js `20+` recommended
-- npm `10+`
-
-### Install
+### Installation
 
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-### Run the app
-
-```bash
+# 2. Start the development server
 npm run dev
 ```
 
-### Build for production
+### Available Scripts
 
-```bash
-npm run build
-```
-
-### Run tests
-
-```bash
-npm test
-```
-
-### Run lint
-
-```bash
-npm run lint
-```
-
-Note: the project currently builds and tests successfully, but lint still has existing violations in the codebase that should be cleaned up separately.
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run build:dev` | Build with development mode enabled |
+| `npm run lint` | Run ESLint across the codebase |
+| `npm run preview` | Preview the production build locally |
+| `npm test` | Run Vitest test suite |
+| `npm run test:watch`| Run Vitest in watch mode |
 
 ---
 
-## Project Structure
+## 📸 The Experience
+
+### 🏠 Home Experience
+* **Hero-led Landing:** Instant upload access right from the start.
+* **Frictionless Flow:** A simple three-step process: *Upload ➔ Clean ➔ Download*.
+
+### 🎛️ Dashboard
+* **Intuitive UI:** Seamless drag-and-drop upload area with real-time scan status per file.
+* **Batch Controls:** Clean single files or process entire batches simultaneously.
+* **Data Lifecycle:** Clear visibility into expiry and retention for uploaded files.
+
+### ☁️ Platform Layer
+* **Supabase Backend:** Robust authentication and synchronized credit tracking.
+* **Edge Functions:** Secure account deletion and optional AI-enhanced report insights.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** React 18, TypeScript, Vite
+* **UI & Styling:** Tailwind CSS, Radix UI, shadcn/ui components, Lucide Icons
+* **State & Forms:** React Query, React Hook Form
+* **Backend Services:** Supabase
+* **Processing Libraries:** `exifr`, `pdf-lib`, `jszip`, `mp3tag.js`, `mp4box`, `heic2any`, `jspdf`
+* **Testing:** Vitest, Testing Library
+
+---
+
+## 🏗️ Project Structure
+
+<details>
+<summary><b>Click to expand directory structure</b></summary>
 
 ```text
 meta-eraser/
@@ -154,69 +121,17 @@ meta-eraser/
 └─ vite.config.ts
 ```
 
----
-
-## Core Capabilities
-
-### File metadata extraction
-
-The app identifies removable and non-removable metadata across supported file formats and surfaces that difference to the user.
-
-### Safe cleaning workflow
-
-Files are cleaned while preserving structural information where necessary, so the output remains usable.
-
-### Reporting
-
-The app can generate:
-
-- per-file audit summaries
-- batch audit downloads
-- PDF reports
-- optional AI-enhanced report insights through Supabase edge functions
-
-### Installable app behavior
-
-MetaClean includes PWA assets and utilities so the app can behave more like a native tool on supported devices.
+</details>
 
 ---
 
-## Current Engineering Notes
+## 📈 Status & Roadmap
 
-- `npm audit` is clean with `0` vulnerabilities in the current dependency graph
-- production build passes
-- tests pass
-- bundle size is still relatively large and should be optimized later
-- lint issues remain in the current codebase
+**Current Status:** Active. The project features a meaningful product surface, a clean `npm audit` (0 vulnerabilities), and successfully passing tests and production builds.
 
----
-
-## Suggested Next Improvements
-
-- resolve current ESLint violations
-- split heavy file-processing dependencies into smaller lazy-loaded chunks
-- expand test coverage beyond the placeholder example test
-- add a proper `.env.example` and deployment notes
-- document Supabase schema and edge function setup
-
----
-
-## Scripts
-
-```json
-{
-  "dev": "vite",
-  "build": "vite build",
-  "build:dev": "vite build --mode development",
-  "lint": "eslint .",
-  "preview": "vite preview",
-  "test": "vitest run",
-  "test:watch": "vitest"
-}
-```
-
----
-
-## Status
-
-This repository is active and already has a meaningful product surface. The README now reflects the actual app rather than placeholder Lovable scaffolding.
+**Next Up / Good First Issues:**
+- [ ] Resolve existing ESLint violations.
+- [ ] Split heavy file-processing dependencies into smaller, lazy-loaded chunks to optimize bundle size.
+- [ ] Expand test coverage beyond the placeholder examples.
+- [ ] Add a `.env.example` template and comprehensive deployment notes.
+- [ ] Document the Supabase schema and Edge Function architecture.
