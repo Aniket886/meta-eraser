@@ -1,0 +1,5 @@
+[project]
+id = "ohqhwmmgilbcldaakklg"
+
+[functions.generate-report-insights]
+verify_jwt = false
