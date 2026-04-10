@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   Coins, Download, Sparkles, ChevronDown, AlertTriangle, Trash2, Clock,
-  FileDown, ClipboardList, Archive, FileText,
+  FileDown, ClipboardList, Archive, FileText, Loader2,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { extractMetadata, cleanFile, downloadBlob, type MetadataMap } from "@/lib/metadata";
