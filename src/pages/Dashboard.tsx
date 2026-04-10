@@ -231,7 +231,7 @@ const Dashboard = () => {
               <Coins className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-sm text-muted-foreground">Credits</div>
-                <div className="text-xl font-heading font-bold">{credits}</div>
+                <div className="text-xl font-heading font-bold">{credits ? availableCleans(credits) : "…"}</div>
               </div>
             </div>
           </div>
