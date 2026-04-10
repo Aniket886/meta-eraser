@@ -141,6 +141,31 @@ export function generatePdfReport(
 
   y += 28;
 
+  // ── AI Insights Section ──
+  if (options.aiInsights) {
+    y = ensureSpace(doc, y, 40, fullDate, userName, pages);
+
+    doc.setFillColor(...LIGHT_BG);
+    doc.roundedRect(MARGIN, y, CONTENT_W, 10, 2, 2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...PRIMARY);
+    doc.text("🤖  AI Privacy Analysis (Powered by Groq)", MARGIN + 4, y + 7);
+    y += 14;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...WHITE);
+
+    const insightLines = doc.splitTextToSize(options.aiInsights, CONTENT_W - 8);
+    for (const line of insightLines) {
+      y = ensureSpace(doc, y, 5, fullDate, userName, pages);
+      doc.text(line, MARGIN + 4, y);
+      y += 4;
+    }
+    y += 6;
+  }
+
   // ── Per-file detail ──
   for (const report of reports) {
     y = ensureSpace(doc, y, 30, fullDate, userName, pages);
