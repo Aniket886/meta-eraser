@@ -10,22 +10,28 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
-  Coins, Download, Sparkles, ChevronDown, AlertTriangle, Trash2,
+  Coins, Download, Sparkles, ChevronDown, AlertTriangle, Trash2, Clock,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { extractMetadata, cleanFile, downloadBlob, type MetadataMap } from "@/lib/metadata";
+import { useToast } from "@/hooks/use-toast";
 
 interface FileJob {
   id: string;
   name: string;
   type: string;
   size: number;
-  status: "uploading" | "scanning" | "scanned" | "cleaning" | "cleaned" | "failed";
-  metadata?: Record<string, { value: string; removable: boolean }>;
+  status: "scanning" | "scanned" | "cleaning" | "cleaned" | "failed";
+  metadata?: MetadataMap;
   warnings?: string[];
+  cleanedBlob?: Blob;
+  addedAt: number;
+  originalFile: File;
 }
 
+const FILE_LIFETIME_MS = 60 * 60 * 1000; // 1 hour
+
 const statusColors: Record<string, string> = {
-  uploading: "bg-muted text-muted-foreground",
   scanning: "bg-primary/20 text-primary",
   scanned: "bg-accent text-accent-foreground",
   cleaning: "bg-primary/20 text-primary",
@@ -35,28 +41,92 @@ const statusColors: Record<string, string> = {
 
 const Dashboard = () => {
   const [files, setFiles] = useState<FileJob[]>([]);
+  const [, setTick] = useState(0);
   const credits = 5;
+  const { toast } = useToast();
 
-  const handleFiles = (selectedFiles: File[]) => {
+  // Auto-delete timer — tick every 30s to update countdown & purge expired
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setFiles((prev) => prev.filter((f) => now - f.addedAt < FILE_LIFETIME_MS));
+      setTick((t) => t + 1);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleFiles = useCallback(async (selectedFiles: File[]) => {
     const newJobs: FileJob[] = selectedFiles.map((f) => ({
       id: crypto.randomUUID(),
       name: f.name,
       type: f.type,
       size: f.size,
-      status: "scanned" as const,
-      metadata: {
-        Author: { value: "John Doe", removable: true },
-        "Created Date": { value: "2024-01-15", removable: true },
-        Software: { value: "Adobe Photoshop", removable: true },
-        "GPS Latitude": { value: "37.7749", removable: true },
-        "GPS Longitude": { value: "-122.4194", removable: true },
-        "Color Profile": { value: "sRGB", removable: false },
-        "Pixel Dimensions": { value: "3024x4032", removable: false },
-      },
-      warnings: ["Color Profile and Pixel Dimensions cannot be removed."],
+      status: "scanning" as const,
+      addedAt: Date.now(),
+      originalFile: f,
     }));
+
     setFiles((prev) => [...newJobs, ...prev]);
-  };
+
+    // Scan each file in parallel
+    for (const job of newJobs) {
+      try {
+        const { metadata, warnings } = await extractMetadata(job.originalFile);
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === job.id ? { ...f, status: "scanned" as const, metadata, warnings } : f
+          )
+        );
+      } catch {
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === job.id
+              ? { ...f, status: "failed" as const, warnings: ["Failed to scan metadata."] }
+              : f
+          )
+        );
+      }
+    }
+  }, []);
+
+  const handleClean = useCallback(async (id: string) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, status: "cleaning" as const } : f))
+    );
+
+    const file = files.find((f) => f.id === id);
+    if (!file) return;
+
+    try {
+      const cleanedBlob = await cleanFile(file.originalFile);
+      const { metadata: afterMeta } = await extractMetadata(
+        new File([cleanedBlob], file.name, { type: file.type })
+      );
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === id
+            ? { ...f, status: "cleaned" as const, cleanedBlob, metadata: afterMeta, warnings: [] }
+            : f
+        )
+      );
+      toast({ title: "File cleaned!", description: `${file.name} metadata has been removed.` });
+    } catch {
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === id
+            ? { ...f, status: "failed" as const, warnings: ["Cleaning failed."] }
+            : f
+        )
+      );
+      toast({ title: "Cleaning failed", description: `Could not clean ${file.name}.`, variant: "destructive" });
+    }
+  }, [files, toast]);
+
+  const handleDownload = useCallback((file: FileJob) => {
+    if (!file.cleanedBlob) return;
+    const cleanName = file.name.replace(/(\.[^.]+)$/, "_clean$1");
+    downloadBlob(file.cleanedBlob, cleanName);
+  }, []);
 
   const removeFile = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
@@ -66,6 +136,13 @@ const Dashboard = () => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatTimeLeft = (addedAt: number) => {
+    const remaining = FILE_LIFETIME_MS - (Date.now() - addedAt);
+    if (remaining <= 0) return "Expiring…";
+    const mins = Math.ceil(remaining / 60_000);
+    return `${mins}m left`;
   };
 
   return (
@@ -108,21 +185,25 @@ const Dashboard = () => {
                           <span className="font-medium truncate">{file.name}</span>
                           <span className="text-xs text-muted-foreground">{formatSize(file.size)}</span>
                         </div>
-                        {(file.status === "uploading" || file.status === "scanning" || file.status === "cleaning") && (
+                        {(file.status === "scanning" || file.status === "cleaning") && (
                           <Progress value={60} className="mt-2 h-1.5" />
                         )}
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                        <Clock className="h-3 w-3" />
+                        {formatTimeLeft(file.addedAt)}
                       </div>
                       <Badge className={statusColors[file.status]}>{file.status}</Badge>
                       {file.warnings && file.warnings.length > 0 && (
                         <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
                       )}
                       {file.status === "scanned" && (
-                        <Button size="sm" className="glow-primary-sm shrink-0">
+                        <Button size="sm" className="glow-primary-sm shrink-0" onClick={() => handleClean(file.id)}>
                           <Sparkles className="h-4 w-4 mr-1" /> Clean
                         </Button>
                       )}
                       {file.status === "cleaned" && (
-                        <Button size="sm" variant="outline" className="shrink-0">
+                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => handleDownload(file)}>
                           <Download className="h-4 w-4 mr-1" /> Download
                         </Button>
                       )}
@@ -144,7 +225,7 @@ const Dashboard = () => {
                             <div>{file.warnings.join(" ")}</div>
                           </div>
                         )}
-                        {file.metadata && (
+                        {file.metadata && Object.keys(file.metadata).length > 0 ? (
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -157,7 +238,7 @@ const Dashboard = () => {
                               {Object.entries(file.metadata).map(([key, val]) => (
                                 <TableRow key={key}>
                                   <TableCell className="font-medium">{key}</TableCell>
-                                  <TableCell className="text-muted-foreground">{val.value}</TableCell>
+                                  <TableCell className="text-muted-foreground max-w-xs truncate">{val.value}</TableCell>
                                   <TableCell>
                                     <Badge variant={val.removable ? "default" : "secondary"} className="text-xs">
                                       {val.removable ? "Yes" : "No"}
@@ -167,6 +248,8 @@ const Dashboard = () => {
                               ))}
                             </TableBody>
                           </Table>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No metadata detected.</p>
                         )}
                       </div>
                     </CollapsibleContent>
