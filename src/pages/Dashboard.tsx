@@ -310,9 +310,12 @@ const Dashboard = () => {
               )}
 
               {scannedCount > 0 && (
-                <Button size="sm" className="glow-primary-sm animate-scale-in" onClick={handleCleanAll}>
-                  <Sparkles className="h-4 w-4 mr-1" /> Clean All ({scannedCount})
-                </Button>
+                <CleanButton
+                  onClick={handleCleanAll}
+                  label={`Clean All (${scannedCount})`}
+                  activeLabel="Cleaning..."
+                  size="sm"
+                />
               )}
               {cleanedCount > 0 && (
                 <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAll}>
