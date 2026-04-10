@@ -262,7 +262,7 @@ async function extractMp4Metadata(
         }
       };
       mp4boxFile.onError = () => reject(new Error("MP4Box parse error"));
-      mp4boxFile.appendBuffer(buffer);
+      mp4boxFile.appendBuffer(buffer as any);
       mp4boxFile.flush();
     });
 
