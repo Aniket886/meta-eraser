@@ -19,6 +19,7 @@ import { generateAuditReport, downloadAuditReport, downloadBatchAuditReport, typ
 import { isZip, processZip, type ZipEntry } from "@/lib/zip-processor";
 import { loadSettings } from "@/lib/privacy-settings";
 import { useToast } from "@/hooks/use-toast";
+import { addHistoryEntry } from "@/lib/processing-history";
 
 interface FileJob {
   id: string;
@@ -126,6 +127,7 @@ const Dashboard = () => {
           )
         );
         const processed = result.entries.filter((e) => e.supported).length;
+        addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: processed });
         toast({ title: "ZIP cleaned!", description: `${processed} files processed inside ${file.name}.` });
       } else {
         const metadataBefore = file.metadata ? { ...file.metadata } : {};
@@ -141,6 +143,7 @@ const Dashboard = () => {
               : f
           )
         );
+        addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: auditReport.summary.removed });
         toast({ title: "File cleaned!", description: `${file.name} metadata has been removed.` });
       }
     } catch {

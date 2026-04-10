@@ -43,9 +43,9 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <>
-              <span className="text-sm text-muted-foreground truncate max-w-[150px]">
+              <Link to="/profile" className="text-sm text-muted-foreground truncate max-w-[150px] hover:text-primary transition-colors">
                 {user.user_metadata?.display_name || user.email}
-              </span>
+              </Link>
               <Button variant="ghost" size="sm" onClick={signOut} className="gap-1">
                 <LogOut className="h-4 w-4" /> Log out
               </Button>
