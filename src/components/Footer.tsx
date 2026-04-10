@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Shield } from "lucide-react";
+import metacleanLogo from "@/assets/metaclean-logo.png";
 
 const Footer = () => (
   <footer className="border-t border-border/50 bg-background">
@@ -7,7 +7,7 @@ const Footer = () => (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
+            <img src={metacleanLogo} alt="MetaClean" className="h-6 w-6" />
             <span className="text-lg font-heading font-bold">MetaClean</span>
           </div>
           <p className="text-sm text-muted-foreground">
