@@ -25,6 +25,7 @@ import { getCredits, useCredit, hasCreditsAvailable, availableCleans, type UserC
 import { useAuth } from "@/hooks/useAuth";
 import { generatePdfReport } from "@/lib/pdf-report";
 import { supabase } from "@/integrations/supabase/client";
+import { isPWA } from "@/lib/pwa-utils";
 
 interface FileJob {
   id: string;
