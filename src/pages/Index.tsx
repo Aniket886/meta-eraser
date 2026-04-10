@@ -6,16 +6,18 @@ import { FileDropZone } from "@/components/FileDropZone";
 import { Link } from "react-router-dom";
 import {
   Shield, Zap, Eye, Upload, Sparkles, Download,
-  FileImage, FileText, File, Lock, Clock
+  FileImage, FileText, File, Lock, Clock, Archive, Wifi,
 } from "lucide-react";
 
 const features = [
   { icon: FileImage, title: "JPG & PNG", desc: "Strip EXIF, GPS, camera data, and more from images." },
   { icon: FileText, title: "PDF & Office", desc: "Remove metadata from PDFs, DOCX, XLSX, and PPTX files." },
   { icon: File, title: "MP3, MP4 & MOV", desc: "Strip ID3 tags from audio and metadata from video files." },
+  { icon: Archive, title: "ZIP Archives", desc: "Upload a ZIP and clean every supported file inside." },
   { icon: Zap, title: "Batch Processing", desc: "Upload multiple files and clean them all at once." },
-  { icon: Lock, title: "Privacy First", desc: "Files auto-deleted after 1 hour. We never store your data." },
+  { icon: Lock, title: "Privacy Controls", desc: "Choose exactly which metadata to strip with enterprise presets." },
   { icon: Eye, title: "Audit Reports", desc: "Download a full report of what metadata was found and removed." },
+  { icon: Wifi, title: "Works Offline", desc: "Install as an app. All processing happens on your device." },
 ];
 
 const steps = [

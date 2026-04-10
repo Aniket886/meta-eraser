@@ -12,10 +12,12 @@ const ACCEPTED_TYPES = [
   "audio/mp3",
   "video/mp4",
   "video/quicktime",
+  "application/zip",
+  "application/x-zip-compressed",
 ];
 
 const ACCEPTED_EXTENSIONS = [
-  ".jpg", ".jpeg", ".png", ".pdf", ".docx", ".xlsx", ".pptx", ".mp3", ".mp4", ".mov",
+  ".jpg", ".jpeg", ".png", ".pdf", ".docx", ".xlsx", ".pptx", ".mp3", ".mp4", ".mov", ".zip",
 ];
 
 interface FileDropZoneProps {
@@ -81,7 +83,7 @@ const FileDropZone = ({ onFilesSelected, disabled, compact }: FileDropZoneProps)
         {isDragging ? "Drop files here" : "Drag & drop files here"}
       </p>
       <p className="text-sm text-muted-foreground mt-1">
-        or click to browse • JPG, PNG, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV
+        or click to browse • JPG, PNG, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV, ZIP
       </p>
     </label>
   );
