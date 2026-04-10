@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import CleanButton from "@/components/CleanButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -509,6 +510,7 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

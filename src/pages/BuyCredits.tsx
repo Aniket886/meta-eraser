@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Coins, Zap, Star, Crown, Check } from "lucide-react";
@@ -121,6 +122,7 @@ const BuyCredits = () => {
           </p>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
