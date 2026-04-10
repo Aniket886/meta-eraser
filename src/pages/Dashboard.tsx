@@ -54,6 +54,7 @@ const Dashboard = () => {
   const [files, setFiles] = useState<FileJob[]>([]);
   const [, setTick] = useState(0);
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
   const [credits, setCredits] = useState<UserCredits | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
