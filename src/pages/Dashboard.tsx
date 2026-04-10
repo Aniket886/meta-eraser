@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   Coins, Download, Sparkles, ChevronDown, AlertTriangle, Trash2, Clock,
-  FileDown, ClipboardList, Archive,
+  FileDown, ClipboardList, Archive, FileText,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { extractMetadata, cleanFile, downloadBlob, type MetadataMap } from "@/lib/metadata";
@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addHistoryEntry } from "@/lib/processing-history";
 import { getCredits, useCredit, hasCreditsAvailable, availableCleans, type UserCredits } from "@/lib/credits";
 import { useAuth } from "@/hooks/useAuth";
+import { generatePdfReport } from "@/lib/pdf-report";
 
 interface FileJob {
   id: string;
