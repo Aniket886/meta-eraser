@@ -20,6 +20,8 @@ import { isZip, processZip, type ZipEntry } from "@/lib/zip-processor";
 import { loadSettings } from "@/lib/privacy-settings";
 import { useToast } from "@/hooks/use-toast";
 import { addHistoryEntry } from "@/lib/processing-history";
+import { getCredits, useCredit, hasCreditsAvailable, availableCleans, type UserCredits } from "@/lib/credits";
+import { useAuth } from "@/hooks/useAuth";
 
 interface FileJob {
   id: string;
@@ -50,8 +52,16 @@ const Dashboard = () => {
   const [files, setFiles] = useState<FileJob[]>([]);
   const [, setTick] = useState(0);
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
-  const credits = 5;
+  const [credits, setCredits] = useState<UserCredits | null>(null);
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  // Load credits
+  useEffect(() => {
+    if (user) {
+      getCredits(user.id).then(setCredits);
+    }
+  }, [user]);
 
   const settings = loadSettings();
   const retentionMs = (settings.retentionMinutes || 60) * 60 * 1000;
