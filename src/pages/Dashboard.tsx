@@ -19,6 +19,7 @@ import { generateAuditReport, downloadAuditReport, downloadBatchAuditReport, typ
 import { isZip, processZip, type ZipEntry } from "@/lib/zip-processor";
 import { loadSettings } from "@/lib/privacy-settings";
 import { useToast } from "@/hooks/use-toast";
+import { addHistoryEntry } from "@/lib/processing-history";
 
 interface FileJob {
   id: string;

@@ -13,6 +13,7 @@ import Admin from "./pages/Admin";
 import ApiDocs from "./pages/ApiDocs";
 import Settings from "./pages/Settings";
 import Install from "./pages/Install";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/api" element={<ApiDocs />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
