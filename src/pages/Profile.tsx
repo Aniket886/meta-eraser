@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,15 @@ const Profile = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
 
-  const [history, setHistory] = useState<ProcessingRecord[]>(getHistory);
+  const [history, setHistory] = useState<ProcessingRecord[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    getHistory().then((records) => {
+      setHistory(records);
+      setLoadingHistory(false);
+    });
+  }, []);
 
   const initials = (displayName || user?.email || "U")
     .split(/[\s@]/)
@@ -64,8 +72,8 @@ const Profile = () => {
     }
   };
 
-  const handleClearHistory = () => {
-    clearHistory();
+  const handleClearHistory = async () => {
+    await clearHistory();
     setHistory([]);
     toast({ title: "History cleared" });
   };
@@ -174,10 +182,10 @@ const Profile = () => {
                 <TableBody>
                   {history.map((r) => (
                     <TableRow key={r.id}>
-                      <TableCell className="font-medium truncate max-w-[200px]">{r.fileName}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatSize(r.fileSize)}</TableCell>
-                      <TableCell>{r.fieldsRemoved}</TableCell>
-                      <TableCell className="text-muted-foreground">{new Date(r.cleanedAt).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-medium truncate max-w-[200px]">{r.file_name}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatSize(r.file_size)}</TableCell>
+                      <TableCell>{r.fields_removed}</TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(r.cleaned_at).toLocaleDateString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
