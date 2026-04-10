@@ -117,13 +117,22 @@ const Dashboard = () => {
 
   const handleClean = useCallback(async (id: string) => {
     const file = files.find((f) => f.id === id);
-    if (!file) return;
+    if (!file || !user) return;
+
+    // Credit check
+    if (credits && !hasCreditsAvailable(credits)) {
+      toast({ title: "No credits remaining", description: "Purchase more credits to continue cleaning files.", variant: "destructive" });
+      return;
+    }
 
     setFiles((prev) =>
       prev.map((f) => (f.id === id ? { ...f, status: "cleaning" as const, metadataBefore: f.metadata ? { ...f.metadata } : undefined } : f))
     );
 
     try {
+      // Deduct credit
+      await useCredit(user.id);
+
       if (file.isZip) {
         const result = await processZip(file.originalFile, settings, (current, total) => {
           setBatchProgress(`Processing ${current} of ${total} in ZIP...`);
@@ -137,7 +146,7 @@ const Dashboard = () => {
           )
         );
         const processed = result.entries.filter((e) => e.supported).length;
-        addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: processed });
+        await addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: processed });
         toast({ title: "ZIP cleaned!", description: `${processed} files processed inside ${file.name}.` });
       } else {
         const metadataBefore = file.metadata ? { ...file.metadata } : {};
@@ -153,9 +162,12 @@ const Dashboard = () => {
               : f
           )
         );
-        addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: auditReport.summary.removed });
+        await addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: auditReport.summary.removed });
         toast({ title: "File cleaned!", description: `${file.name} metadata has been removed.` });
       }
+
+      // Refresh credits
+      getCredits(user.id).then(setCredits);
     } catch {
       setFiles((prev) =>
         prev.map((f) =>
