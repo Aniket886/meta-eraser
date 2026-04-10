@@ -10,9 +10,9 @@ import {
 } from "lucide-react";
 
 const features = [
-  { icon: FileImage, title: "JPG & PNG", desc: "Strip EXIF, GPS, camera data, and more from images." },
+  { icon: FileImage, title: "Images", desc: "Strip EXIF & GPS from JPG, PNG, TIFF, and HEIC files." },
   { icon: FileText, title: "PDF & Office", desc: "Remove metadata from PDFs, DOCX, XLSX, and PPTX files." },
-  { icon: File, title: "MP3, MP4 & MOV", desc: "Strip ID3 tags from audio and metadata from video files." },
+  { icon: File, title: "Audio, Video & Text", desc: "Clean MP3, MP4, MOV, JSON, XML, and TXT files." },
   { icon: Archive, title: "ZIP Archives", desc: "Upload a ZIP and clean every supported file inside." },
   { icon: Zap, title: "Batch Processing", desc: "Upload multiple files and clean them all at once." },
   { icon: Lock, title: "Privacy Controls", desc: "Choose exactly which metadata to strip with enterprise presets." },
