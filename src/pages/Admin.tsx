@@ -5,27 +5,67 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Users, FileStack, HardDrive, Clock, Plus } from "lucide-react";
-import { useState } from "react";
+import { Users, FileStack, HardDrive, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const mockUsers = [
-  { id: "1", name: "Alice Smith", email: "alice@example.com", credits: 42, filesProcessed: 128, role: "user" },
-  { id: "2", name: "Bob Jones", email: "bob@example.com", credits: 7, filesProcessed: 23, role: "user" },
-  { id: "3", name: "Admin User", email: "admin@metaclean.io", credits: 999, filesProcessed: 0, role: "admin" },
-];
-
-const stats = [
-  { icon: Users, label: "Total Users", value: "1,234" },
-  { icon: FileStack, label: "Files Processed", value: "56,789" },
-  { icon: HardDrive, label: "Storage Used", value: "12.4 GB" },
-  { icon: Clock, label: "Pending Cleanup", value: "47" },
-];
+interface UserRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  role: string;
+  created_at: string;
+}
 
 const Admin = () => {
   const [search, setSearch] = useState("");
-  const filtered = mockUsers.filter(
-    (u) => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      // Fetch all user roles
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
+      const roleMap = new Map<string, string>();
+      roles?.forEach((r) => roleMap.set(r.user_id, r.role));
+
+      // Fetch profiles
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, email, display_name, created_at");
+
+      if (profiles) {
+        setUsers(
+          profiles.map((p) => ({
+            id: p.id,
+            email: p.email || "",
+            display_name: p.display_name,
+            role: roleMap.get(p.id) || "user",
+            created_at: p.created_at,
+          }))
+        );
+      }
+      setLoading(false);
+    };
+
+    fetchUsers();
+  }, []);
+
+  const filtered = users.filter(
+    (u) =>
+      (u.display_name || "").toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const stats = [
+    { icon: Users, label: "Total Users", value: users.length.toString() },
+    { icon: FileStack, label: "Files Processed", value: "—" },
+    { icon: HardDrive, label: "Storage Used", value: "—" },
+    { icon: Clock, label: "Pending Cleanup", value: "—" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -60,38 +100,48 @@ const Admin = () => {
               />
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Credits</TableHead>
-                  <TableHead>Files Processed</TableHead>
-                  <TableHead className="w-28">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{user.credits}</TableCell>
-                    <TableCell>{user.filesProcessed}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline">
-                        <Plus className="h-3 w-3 mr-1" /> Credits
-                      </Button>
-                    </TableCell>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        No users found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filtered.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                          {user.display_name || "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </div>
       </main>
