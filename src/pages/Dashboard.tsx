@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/collapsible";
 import {
   Coins, Download, Sparkles, ChevronDown, AlertTriangle, Trash2, Clock,
+  FileDown, ClipboardList,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { extractMetadata, cleanFile, downloadBlob, type MetadataMap } from "@/lib/metadata";
+import { generateAuditReport, downloadAuditReport, downloadBatchAuditReport, type AuditReport } from "@/lib/audit";
 import { useToast } from "@/hooks/use-toast";
 
 interface FileJob {
@@ -23,13 +25,15 @@ interface FileJob {
   size: number;
   status: "scanning" | "scanned" | "cleaning" | "cleaned" | "failed";
   metadata?: MetadataMap;
+  metadataBefore?: MetadataMap;
   warnings?: string[];
   cleanedBlob?: Blob;
+  auditReport?: AuditReport;
   addedAt: number;
   originalFile: File;
 }
 
-const FILE_LIFETIME_MS = 60 * 60 * 1000; // 1 hour
+const FILE_LIFETIME_MS = 60 * 60 * 1000;
 
 const statusColors: Record<string, string> = {
   scanning: "bg-primary/20 text-primary",
@@ -42,10 +46,10 @@ const statusColors: Record<string, string> = {
 const Dashboard = () => {
   const [files, setFiles] = useState<FileJob[]>([]);
   const [, setTick] = useState(0);
+  const [batchProgress, setBatchProgress] = useState<string | null>(null);
   const credits = 5;
   const { toast } = useToast();
 
-  // Auto-delete timer — tick every 30s to update countdown & purge expired
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -68,7 +72,6 @@ const Dashboard = () => {
 
     setFiles((prev) => [...newJobs, ...prev]);
 
-    // Scan each file in parallel
     for (const job of newJobs) {
       try {
         const { metadata, warnings } = await extractMetadata(job.originalFile);
@@ -80,9 +83,7 @@ const Dashboard = () => {
       } catch {
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === job.id
-              ? { ...f, status: "failed" as const, warnings: ["Failed to scan metadata."] }
-              : f
+            f.id === job.id ? { ...f, status: "failed" as const, warnings: ["Failed to scan metadata."] } : f
           )
         );
       }
@@ -91,21 +92,23 @@ const Dashboard = () => {
 
   const handleClean = useCallback(async (id: string) => {
     setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status: "cleaning" as const } : f))
+      prev.map((f) => (f.id === id ? { ...f, status: "cleaning" as const, metadataBefore: f.metadata ? { ...f.metadata } : undefined } : f))
     );
 
     const file = files.find((f) => f.id === id);
     if (!file) return;
 
     try {
+      const metadataBefore = file.metadata ? { ...file.metadata } : {};
       const cleanedBlob = await cleanFile(file.originalFile);
       const { metadata: afterMeta } = await extractMetadata(
         new File([cleanedBlob], file.name, { type: file.type })
       );
+      const auditReport = generateAuditReport(file.name, file.type, file.size, metadataBefore, afterMeta);
       setFiles((prev) =>
         prev.map((f) =>
           f.id === id
-            ? { ...f, status: "cleaned" as const, cleanedBlob, metadata: afterMeta, warnings: [] }
+            ? { ...f, status: "cleaned" as const, cleanedBlob, metadata: afterMeta, metadataBefore, auditReport, warnings: [] }
             : f
         )
       );
@@ -113,24 +116,44 @@ const Dashboard = () => {
     } catch {
       setFiles((prev) =>
         prev.map((f) =>
-          f.id === id
-            ? { ...f, status: "failed" as const, warnings: ["Cleaning failed."] }
-            : f
+          f.id === id ? { ...f, status: "failed" as const, warnings: ["Cleaning failed."] } : f
         )
       );
       toast({ title: "Cleaning failed", description: `Could not clean ${file.name}.`, variant: "destructive" });
     }
   }, [files, toast]);
 
+  const handleCleanAll = useCallback(async () => {
+    const scannedFiles = files.filter((f) => f.status === "scanned");
+    if (!scannedFiles.length) return;
+
+    for (let i = 0; i < scannedFiles.length; i++) {
+      setBatchProgress(`Cleaning ${i + 1} of ${scannedFiles.length}...`);
+      await handleClean(scannedFiles[i].id);
+    }
+    setBatchProgress(null);
+    toast({ title: "Batch complete!", description: `${scannedFiles.length} files cleaned.` });
+  }, [files, handleClean, toast]);
+
+  const handleDownloadAll = useCallback(() => {
+    const cleanedFiles = files.filter((f) => f.status === "cleaned" && f.cleanedBlob);
+    for (const file of cleanedFiles) {
+      const cleanName = file.name.replace(/(\.[^.]+)$/, "_clean$1");
+      downloadBlob(file.cleanedBlob!, cleanName);
+    }
+  }, [files]);
+
+  const handleDownloadAllAudits = useCallback(() => {
+    const reports = files.filter((f) => f.auditReport).map((f) => f.auditReport!);
+    if (reports.length) downloadBatchAuditReport(reports);
+  }, [files]);
+
   const handleDownload = useCallback((file: FileJob) => {
     if (!file.cleanedBlob) return;
-    const cleanName = file.name.replace(/(\.[^.]+)$/, "_clean$1");
-    downloadBlob(file.cleanedBlob, cleanName);
+    downloadBlob(file.cleanedBlob, file.name.replace(/(\.[^.]+)$/, "_clean$1"));
   }, []);
 
-  const removeFile = (id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-  };
+  const removeFile = (id: string) => setFiles((prev) => prev.filter((f) => f.id !== id));
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -141,9 +164,12 @@ const Dashboard = () => {
   const formatTimeLeft = (addedAt: number) => {
     const remaining = FILE_LIFETIME_MS - (Date.now() - addedAt);
     if (remaining <= 0) return "Expiring…";
-    const mins = Math.ceil(remaining / 60_000);
-    return `${mins}m left`;
+    return `${Math.ceil(remaining / 60_000)}m left`;
   };
+
+  const scannedCount = files.filter((f) => f.status === "scanned").length;
+  const cleanedCount = files.filter((f) => f.status === "cleaned").length;
+  const auditCount = files.filter((f) => f.auditReport).length;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -171,10 +197,38 @@ const Dashboard = () => {
             <FileDropZone onFilesSelected={handleFiles} />
           </div>
 
+          {/* Batch Actions */}
+          {files.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <h2 className="text-xl font-heading font-semibold mr-auto">
+                Files <span className="text-muted-foreground text-sm font-normal">({files.length})</span>
+              </h2>
+
+              {batchProgress && (
+                <span className="text-sm text-primary animate-pulse">{batchProgress}</span>
+              )}
+
+              {scannedCount > 0 && (
+                <Button size="sm" className="glow-primary-sm" onClick={handleCleanAll}>
+                  <Sparkles className="h-4 w-4 mr-1" /> Clean All ({scannedCount})
+                </Button>
+              )}
+              {cleanedCount > 0 && (
+                <Button size="sm" variant="outline" onClick={handleDownloadAll}>
+                  <FileDown className="h-4 w-4 mr-1" /> Download All ({cleanedCount})
+                </Button>
+              )}
+              {auditCount > 0 && (
+                <Button size="sm" variant="outline" onClick={handleDownloadAllAudits}>
+                  <ClipboardList className="h-4 w-4 mr-1" /> Audit Reports ({auditCount})
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* File Queue */}
           {files.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-xl font-heading font-semibold">Files</h2>
               {files.map((file) => (
                 <Collapsible key={file.id}>
                   <div className="glass rounded-lg overflow-hidden">
@@ -203,9 +257,16 @@ const Dashboard = () => {
                         </Button>
                       )}
                       {file.status === "cleaned" && (
-                        <Button size="sm" variant="outline" className="shrink-0" onClick={() => handleDownload(file)}>
-                          <Download className="h-4 w-4 mr-1" /> Download
-                        </Button>
+                        <>
+                          <Button size="sm" variant="outline" className="shrink-0" onClick={() => handleDownload(file)}>
+                            <Download className="h-4 w-4 mr-1" /> Download
+                          </Button>
+                          {file.auditReport && (
+                            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => downloadAuditReport(file.auditReport!)}>
+                              <ClipboardList className="h-4 w-4 mr-1" /> Audit
+                            </Button>
+                          )}
+                        </>
                       )}
                       <CollapsibleTrigger asChild>
                         <Button size="icon" variant="ghost" className="shrink-0">
@@ -225,6 +286,15 @@ const Dashboard = () => {
                             <div>{file.warnings.join(" ")}</div>
                           </div>
                         )}
+
+                        {/* Audit summary */}
+                        {file.auditReport && (
+                          <div className="flex gap-4 mb-4 text-sm">
+                            <span className="text-success">✓ {file.auditReport.summary.removed} removed</span>
+                            <span className="text-muted-foreground">• {file.auditReport.summary.kept} kept</span>
+                          </div>
+                        )}
+
                         {file.metadata && Object.keys(file.metadata).length > 0 ? (
                           <Table>
                             <TableHeader>
