@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import CleanButton from "@/components/CleanButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileDropZone, getFileIcon } from "@/components/FileDropZone";
