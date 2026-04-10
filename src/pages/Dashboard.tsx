@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   Coins, Download, Sparkles, ChevronDown, AlertTriangle, Trash2, Clock,
-  FileDown, ClipboardList, Archive, FileText,
+  FileDown, ClipboardList, Archive, FileText, Loader2,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { extractMetadata, cleanFile, downloadBlob, type MetadataMap } from "@/lib/metadata";
@@ -54,6 +54,7 @@ const Dashboard = () => {
   const [files, setFiles] = useState<FileJob[]>([]);
   const [, setTick] = useState(0);
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
   const [credits, setCredits] = useState<UserCredits | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -223,19 +224,27 @@ const Dashboard = () => {
   }, [toast]);
 
   const handleDownloadPdfReport = useCallback(async (report: AuditReport) => {
-    toast({ title: "Generating PDF…", description: "Fetching AI insights from Groq…" });
-    const insights = await fetchAiInsights([report]);
-    generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
-    toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+    setGeneratingPdf(report.filename);
+    try {
+      const insights = await fetchAiInsights([report]);
+      generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
+      toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+    } finally {
+      setGeneratingPdf(null);
+    }
   }, [user, fetchAiInsights, toast]);
 
   const handleDownloadAllPdfReports = useCallback(async () => {
     const reports = files.filter((f) => f.auditReport).map((f) => f.auditReport!);
     if (!reports.length) return;
-    toast({ title: "Generating PDF…", description: "Fetching AI insights from Groq…" });
-    const insights = await fetchAiInsights(reports);
-    generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
-    toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+    setGeneratingPdf("__all__");
+    try {
+      const insights = await fetchAiInsights(reports);
+      generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
+      toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+    } finally {
+      setGeneratingPdf(null);
+    }
   }, [files, user, fetchAiInsights, toast]);
 
   const handleDownload = useCallback((file: FileJob) => {
@@ -315,8 +324,8 @@ const Dashboard = () => {
                 </Button>
               )}
               {auditCount > 0 && (
-                <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAllPdfReports}>
-                  <FileText className="h-4 w-4 mr-1" /> PDF Report ({auditCount})
+                <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAllPdfReports} disabled={generatingPdf === "__all__"}>
+                  {generatingPdf === "__all__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileText className="h-4 w-4 mr-1" />} PDF Report ({auditCount})
                 </Button>
               )}
             </div>
@@ -371,8 +380,8 @@ const Dashboard = () => {
                             </Button>
                           )}
                           {file.auditReport && (
-                            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => handleDownloadPdfReport(file.auditReport!)}>
-                              <FileText className="h-4 w-4 mr-1" /> PDF
+                            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => handleDownloadPdfReport(file.auditReport!)} disabled={generatingPdf === file.auditReport!.filename}>
+                              {generatingPdf === file.auditReport!.filename ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileText className="h-4 w-4 mr-1" />} PDF
                             </Button>
                           )}
                         </>
