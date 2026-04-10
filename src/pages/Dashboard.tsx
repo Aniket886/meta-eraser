@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import CleanButton from "@/components/CleanButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileDropZone, getFileIcon } from "@/components/FileDropZone";
@@ -309,9 +310,12 @@ const Dashboard = () => {
               )}
 
               {scannedCount > 0 && (
-                <Button size="sm" className="glow-primary-sm animate-scale-in" onClick={handleCleanAll}>
-                  <Sparkles className="h-4 w-4 mr-1" /> Clean All ({scannedCount})
-                </Button>
+                <CleanButton
+                  onClick={handleCleanAll}
+                  label={`Clean All (${scannedCount})`}
+                  activeLabel="Cleaning..."
+                  size="sm"
+                />
               )}
               {cleanedCount > 0 && (
                 <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAll}>
@@ -365,9 +369,12 @@ const Dashboard = () => {
                         <AlertTriangle className="h-4 w-4 text-warning shrink-0 animate-pulse" />
                       )}
                       {file.status === "scanned" && (
-                        <Button size="sm" className="glow-primary-sm shrink-0 hover-lift" onClick={() => handleClean(file.id)}>
-                          <Sparkles className="h-4 w-4 mr-1" /> Clean
-                        </Button>
+                        <CleanButton
+                          onClick={() => handleClean(file.id)}
+                          label="Clean"
+                          activeLabel="Cleaning"
+                          size="sm"
+                        />
                       )}
                       {file.status === "cleaned" && (
                         <>
