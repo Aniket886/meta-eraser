@@ -204,6 +204,15 @@ const Dashboard = () => {
     if (reports.length) downloadBatchAuditReport(reports);
   }, [files]);
 
+  const handleDownloadPdfReport = useCallback((report: AuditReport) => {
+    generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email });
+  }, [user]);
+
+  const handleDownloadAllPdfReports = useCallback(() => {
+    const reports = files.filter((f) => f.auditReport).map((f) => f.auditReport!);
+    if (reports.length) generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email });
+  }, [files, user]);
+
   const handleDownload = useCallback((file: FileJob) => {
     if (!file.cleanedBlob) return;
     const cleanName = file.isZip ? file.name.replace(/\.zip$/i, "_clean.zip") : file.name.replace(/(\.[^.]+)$/, "_clean$1");
