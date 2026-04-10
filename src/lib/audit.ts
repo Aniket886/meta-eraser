@@ -3,6 +3,7 @@ import type { MetadataMap } from "./metadata";
 export interface AuditField {
   name: string;
   originalValue: string;
+  afterValue: string;
   status: "removed" | "kept";
   reason?: string;
 }
@@ -30,14 +31,16 @@ export function generateAuditReport(
   for (const [key, before] of Object.entries(metadataBefore)) {
     const after = metadataAfter[key];
     const wasRemoved = !after || after.value === "" || after.value !== before.value;
+    const afterValue = after?.value ?? "";
 
     if (before.removable && wasRemoved) {
-      fields.push({ name: key, originalValue: before.value, status: "removed" });
+      fields.push({ name: key, originalValue: before.value, afterValue, status: "removed" });
       removed++;
     } else {
       fields.push({
         name: key,
         originalValue: before.value,
+        afterValue: afterValue || before.value,
         status: "kept",
         reason: before.removable ? "Value unchanged" : "Structural data",
       });

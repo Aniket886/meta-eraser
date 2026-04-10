@@ -25,6 +25,7 @@ import { getCredits, useCredit, hasCreditsAvailable, availableCleans, type UserC
 import { useAuth } from "@/hooks/useAuth";
 import { generatePdfReport } from "@/lib/pdf-report";
 import { supabase } from "@/integrations/supabase/client";
+import { isPWA } from "@/lib/pwa-utils";
 
 interface FileJob {
   id: string;
@@ -227,9 +228,15 @@ const Dashboard = () => {
   const handleDownloadPdfReport = useCallback(async (report: AuditReport) => {
     setGeneratingPdf(report.filename);
     try {
-      const insights = await fetchAiInsights([report]);
-      generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
-      toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+      const pwa = isPWA();
+      const insights = pwa ? undefined : await fetchAiInsights([report]);
+      generatePdfReport([report], {
+        userName: pwa ? undefined : user?.user_metadata?.full_name,
+        userEmail: pwa ? undefined : user?.email,
+        aiInsights: insights,
+        isPWA: pwa,
+      });
+      toast({ title: "PDF Downloaded", description: pwa ? "Anonymous report saved." : "Report with AI insights saved." });
     } finally {
       setGeneratingPdf(null);
     }
@@ -240,9 +247,15 @@ const Dashboard = () => {
     if (!reports.length) return;
     setGeneratingPdf("__all__");
     try {
-      const insights = await fetchAiInsights(reports);
-      generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
-      toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+      const pwa = isPWA();
+      const insights = pwa ? undefined : await fetchAiInsights(reports);
+      generatePdfReport(reports, {
+        userName: pwa ? undefined : user?.user_metadata?.full_name,
+        userEmail: pwa ? undefined : user?.email,
+        aiInsights: insights,
+        isPWA: pwa,
+      });
+      toast({ title: "PDF Downloaded", description: pwa ? "Anonymous report saved." : "Report with AI insights saved." });
     } finally {
       setGeneratingPdf(null);
     }
