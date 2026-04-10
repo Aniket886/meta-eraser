@@ -76,6 +76,16 @@ const Admin = () => {
 
   useEffect(() => {
     fetchUsers();
+
+    // Realtime: re-fetch when profiles, credits, or roles change
+    const channel = supabase
+      .channel("admin-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => fetchUsers())
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_credits" }, () => fetchUsers())
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => fetchUsers())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
