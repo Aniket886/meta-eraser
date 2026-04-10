@@ -14,6 +14,7 @@ import ApiDocs from "./pages/ApiDocs";
 import Settings from "./pages/Settings";
 import Install from "./pages/Install";
 import Profile from "./pages/Profile";
+import BuyCredits from "./pages/BuyCredits";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/install" element={<Install />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/buy-credits" element={<ProtectedRoute><BuyCredits /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
