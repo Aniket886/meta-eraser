@@ -1,33 +1,29 @@
 
 
-## Database Tables for Processing History & User Credits
+## Plan: Enforce Admin Role-Based Access
 
-### What We're Building
-Two Supabase tables to replace localStorage-based history and add a credit system, with RLS policies and updated app code.
+### What changes
 
-### Database Schema
+1. **Create `useAdminCheck` hook** (`src/hooks/useAdminCheck.ts`)
+   - Queries `user_roles` table via Supabase to check if current user has `admin` role
+   - Returns `{ isAdmin, loading }`
 
-**1. `processing_history` table**
-- Columns: `id` (UUID PK), `user_id` (FK to auth.users), `file_name`, `file_type`, `file_size` (bigint), `fields_removed` (int), `cleaned_at` (timestamptz)
-- RLS: Users can SELECT, INSERT, and DELETE their own rows only
+2. **Create `AdminRoute` component** (`src/components/AdminRoute.tsx`)
+   - Wraps `ProtectedRoute` logic + admin check
+   - Shows spinner while loading, redirects non-admins to `/dashboard` with a toast
 
-**2. `user_credits` table**
-- Columns: `id` (UUID PK), `user_id` (FK, unique), `balance` (int, default 5), `free_cleans_today` (int, default 0), `last_free_reset` (date), `updated_at`
-- RLS: Users can SELECT, INSERT, and UPDATE their own row only
-- Daily free cleans reset logic: if `last_free_reset < today`, reset `free_cleans_today` to 0
+3. **Update `src/App.tsx`**
+   - Replace `<ProtectedRoute><Admin /></ProtectedRoute>` with `<AdminRoute><Admin /></AdminRoute>`
 
-### Code Changes
+4. **Update `src/pages/Admin.tsx`**
+   - Remove mock data, fetch real users from Supabase (profiles + user_credits + user_roles)
 
-| File | Change |
-|------|--------|
-| **Migration** | Create both tables with RLS policies |
-| `src/lib/processing-history.ts` | Rewrite to use Supabase queries (async). `getHistory` → select, `addHistoryEntry` → insert, `clearHistory` → delete |
-| **New** `src/lib/credits.ts` | `getCredits(userId)` — fetch/auto-create row, reset daily frees. `useCredit(userId)` — deduct credit. `hasCreditsAvailable(userId)` — check availability |
-| `src/pages/Dashboard.tsx` | Check credits before cleaning, deduct on success, show credit balance badge |
-| `src/pages/Profile.tsx` | Fetch history from Supabase via useEffect, display credit balance |
+### Technical details
 
-### Technical Notes
-- Free tier: 5 cleans/day with account (per memory). Credits beyond that come from purchased balance.
-- All history/credit functions become async — callers updated accordingly.
-- Credit row auto-created on first use via upsert pattern.
+The `useAdminCheck` hook queries:
+```ts
+supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").single()
+```
+
+`AdminRoute` redirects unauthorized users to `/dashboard` and shows a "Not authorized" toast. This is a client-side guard backed by RLS on the server side (the `has_role` function you already created).
 
