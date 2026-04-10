@@ -380,8 +380,8 @@ const Dashboard = () => {
                             </Button>
                           )}
                           {file.auditReport && (
-                            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => handleDownloadPdfReport(file.auditReport!)}>
-                              <FileText className="h-4 w-4 mr-1" /> PDF
+                            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => handleDownloadPdfReport(file.auditReport!)} disabled={generatingPdf === file.auditReport!.filename}>
+                              {generatingPdf === file.auditReport!.filename ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileText className="h-4 w-4 mr-1" />} PDF
                             </Button>
                           )}
                         </>
