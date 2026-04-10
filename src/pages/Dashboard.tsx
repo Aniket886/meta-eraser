@@ -11,11 +11,13 @@ import {
 } from "@/components/ui/collapsible";
 import {
   Coins, Download, Sparkles, ChevronDown, AlertTriangle, Trash2, Clock,
-  FileDown, ClipboardList,
+  FileDown, ClipboardList, Archive,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { extractMetadata, cleanFile, downloadBlob, type MetadataMap } from "@/lib/metadata";
 import { generateAuditReport, downloadAuditReport, downloadBatchAuditReport, type AuditReport } from "@/lib/audit";
+import { isZip, processZip, type ZipEntry } from "@/lib/zip-processor";
+import { loadSettings } from "@/lib/privacy-settings";
 import { useToast } from "@/hooks/use-toast";
 
 interface FileJob {
@@ -31,9 +33,9 @@ interface FileJob {
   auditReport?: AuditReport;
   addedAt: number;
   originalFile: File;
+  isZip?: boolean;
+  zipEntries?: ZipEntry[];
 }
-
-const FILE_LIFETIME_MS = 60 * 60 * 1000;
 
 const statusColors: Record<string, string> = {
   scanning: "bg-primary/20 text-primary",
@@ -50,14 +52,17 @@ const Dashboard = () => {
   const credits = 5;
   const { toast } = useToast();
 
+  const settings = loadSettings();
+  const retentionMs = (settings.retentionMinutes || 60) * 60 * 1000;
+
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      setFiles((prev) => prev.filter((f) => now - f.addedAt < FILE_LIFETIME_MS));
+      setFiles((prev) => prev.filter((f) => now - f.addedAt < retentionMs));
       setTick((t) => t + 1);
     }, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [retentionMs]);
 
   const handleFiles = useCallback(async (selectedFiles: File[]) => {
     const newJobs: FileJob[] = selectedFiles.map((f) => ({
@@ -68,22 +73,32 @@ const Dashboard = () => {
       status: "scanning" as const,
       addedAt: Date.now(),
       originalFile: f,
+      isZip: isZip(f),
     }));
 
     setFiles((prev) => [...newJobs, ...prev]);
 
     for (const job of newJobs) {
       try {
-        const { metadata, warnings } = await extractMetadata(job.originalFile);
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === job.id ? { ...f, status: "scanned" as const, metadata, warnings } : f
-          )
-        );
+        if (job.isZip) {
+          // For ZIP files, mark as scanned immediately (processing happens on clean)
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === job.id ? { ...f, status: "scanned" as const, warnings: ["ZIP archive — click Clean to process all files inside."] } : f
+            )
+          );
+        } else {
+          const { metadata, warnings } = await extractMetadata(job.originalFile);
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === job.id ? { ...f, status: "scanned" as const, metadata, warnings } : f
+            )
+          );
+        }
       } catch {
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === job.id ? { ...f, status: "failed" as const, warnings: ["Failed to scan metadata."] } : f
+            f.id === job.id ? { ...f, status: "failed" as const, warnings: ["Failed to scan."] } : f
           )
         );
       }
@@ -91,28 +106,44 @@ const Dashboard = () => {
   }, []);
 
   const handleClean = useCallback(async (id: string) => {
+    const file = files.find((f) => f.id === id);
+    if (!file) return;
+
     setFiles((prev) =>
       prev.map((f) => (f.id === id ? { ...f, status: "cleaning" as const, metadataBefore: f.metadata ? { ...f.metadata } : undefined } : f))
     );
 
-    const file = files.find((f) => f.id === id);
-    if (!file) return;
-
     try {
-      const metadataBefore = file.metadata ? { ...file.metadata } : {};
-      const cleanedBlob = await cleanFile(file.originalFile);
-      const { metadata: afterMeta } = await extractMetadata(
-        new File([cleanedBlob], file.name, { type: file.type })
-      );
-      const auditReport = generateAuditReport(file.name, file.type, file.size, metadataBefore, afterMeta);
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === id
-            ? { ...f, status: "cleaned" as const, cleanedBlob, metadata: afterMeta, metadataBefore, auditReport, warnings: [] }
-            : f
-        )
-      );
-      toast({ title: "File cleaned!", description: `${file.name} metadata has been removed.` });
+      if (file.isZip) {
+        const result = await processZip(file.originalFile, settings, (current, total) => {
+          setBatchProgress(`Processing ${current} of ${total} in ZIP...`);
+        });
+        setBatchProgress(null);
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === id
+              ? { ...f, status: "cleaned" as const, cleanedBlob: result.cleanedBlob, zipEntries: result.entries, warnings: [] }
+              : f
+          )
+        );
+        const processed = result.entries.filter((e) => e.supported).length;
+        toast({ title: "ZIP cleaned!", description: `${processed} files processed inside ${file.name}.` });
+      } else {
+        const metadataBefore = file.metadata ? { ...file.metadata } : {};
+        const cleanedBlob = await cleanFile(file.originalFile, settings);
+        const { metadata: afterMeta } = await extractMetadata(
+          new File([cleanedBlob], file.name, { type: file.type })
+        );
+        const auditReport = generateAuditReport(file.name, file.type, file.size, metadataBefore, afterMeta);
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === id
+              ? { ...f, status: "cleaned" as const, cleanedBlob, metadata: afterMeta, metadataBefore, auditReport, warnings: [] }
+              : f
+          )
+        );
+        toast({ title: "File cleaned!", description: `${file.name} metadata has been removed.` });
+      }
     } catch {
       setFiles((prev) =>
         prev.map((f) =>
@@ -121,7 +152,7 @@ const Dashboard = () => {
       );
       toast({ title: "Cleaning failed", description: `Could not clean ${file.name}.`, variant: "destructive" });
     }
-  }, [files, toast]);
+  }, [files, toast, settings]);
 
   const handleCleanAll = useCallback(async () => {
     const scannedFiles = files.filter((f) => f.status === "scanned");
@@ -138,7 +169,7 @@ const Dashboard = () => {
   const handleDownloadAll = useCallback(() => {
     const cleanedFiles = files.filter((f) => f.status === "cleaned" && f.cleanedBlob);
     for (const file of cleanedFiles) {
-      const cleanName = file.name.replace(/(\.[^.]+)$/, "_clean$1");
+      const cleanName = file.isZip ? file.name.replace(/\.zip$/i, "_clean.zip") : file.name.replace(/(\.[^.]+)$/, "_clean$1");
       downloadBlob(file.cleanedBlob!, cleanName);
     }
   }, [files]);
@@ -150,7 +181,8 @@ const Dashboard = () => {
 
   const handleDownload = useCallback((file: FileJob) => {
     if (!file.cleanedBlob) return;
-    downloadBlob(file.cleanedBlob, file.name.replace(/(\.[^.]+)$/, "_clean$1"));
+    const cleanName = file.isZip ? file.name.replace(/\.zip$/i, "_clean.zip") : file.name.replace(/(\.[^.]+)$/, "_clean$1");
+    downloadBlob(file.cleanedBlob, cleanName);
   }, []);
 
   const removeFile = (id: string) => setFiles((prev) => prev.filter((f) => f.id !== id));
@@ -162,7 +194,7 @@ const Dashboard = () => {
   };
 
   const formatTimeLeft = (addedAt: number) => {
-    const remaining = FILE_LIFETIME_MS - (Date.now() - addedAt);
+    const remaining = retentionMs - (Date.now() - addedAt);
     if (remaining <= 0) return "Expiring…";
     return `${Math.ceil(remaining / 60_000)}m left`;
   };
@@ -233,11 +265,12 @@ const Dashboard = () => {
                 <Collapsible key={file.id}>
                   <div className="glass rounded-lg overflow-hidden">
                     <div className="flex items-center gap-4 p-4">
-                      {getFileIcon(file.type)}
+                      {file.isZip ? <Archive className="h-5 w-5 text-primary" /> : getFileIcon(file.type)}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium truncate">{file.name}</span>
                           <span className="text-xs text-muted-foreground">{formatSize(file.size)}</span>
+                          {file.isZip && <Badge variant="secondary" className="text-xs">ZIP</Badge>}
                         </div>
                         {(file.status === "scanning" || file.status === "cleaning") && (
                           <Progress value={60} className="mt-2 h-1.5" />
@@ -295,6 +328,33 @@ const Dashboard = () => {
                           </div>
                         )}
 
+                        {/* ZIP entries */}
+                        {file.zipEntries && file.zipEntries.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium mb-2">Files in archive ({file.zipEntries.length})</h4>
+                            <div className="space-y-2">
+                              {file.zipEntries.map((entry, i) => (
+                                <div key={i} className="flex items-center gap-3 text-sm bg-accent/30 rounded-md px-3 py-2">
+                                  <span className="truncate flex-1">{entry.name}</span>
+                                  <span className="text-xs text-muted-foreground">{formatSize(entry.size)}</span>
+                                  {entry.supported ? (
+                                    entry.auditReport ? (
+                                      <span className="text-xs text-success">✓ {entry.auditReport.summary.removed} stripped</span>
+                                    ) : (
+                                      <Badge variant="secondary" className="text-xs">Supported</Badge>
+                                    )
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs">Skipped</Badge>
+                                  )}
+                                  {entry.warnings?.map((w, j) => (
+                                    <span key={j} className="text-xs text-warning">{w}</span>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {file.metadata && Object.keys(file.metadata).length > 0 ? (
                           <Table>
                             <TableHeader>
@@ -319,7 +379,7 @@ const Dashboard = () => {
                             </TableBody>
                           </Table>
                         ) : (
-                          <p className="text-sm text-muted-foreground">No metadata detected.</p>
+                          !file.zipEntries && <p className="text-sm text-muted-foreground">No metadata detected.</p>
                         )}
                       </div>
                     </CollapsibleContent>
