@@ -96,3 +96,285 @@
   .stagger-7 { animation-delay: 0.35s; }
   .stagger-8 { animation-delay: 0.4s; }
 }
+
+/* ── Animated Clean Button ── */
+.clean-btn-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.clean-btn {
+  --border-radius: 24px;
+  --padding: 4px;
+  --transition: 0.4s;
+  --button-color: hsl(240 40% 8%);
+  --highlight-color-hue: 243deg;
+
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45em 0.8em 0.45em 0.9em;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  position: relative;
+  background-color: var(--button-color);
+  box-shadow:
+    inset 0px 1px 1px rgba(255, 255, 255, 0.15),
+    inset 0px 2px 2px rgba(255, 255, 255, 0.1),
+    inset 0px 4px 4px rgba(255, 255, 255, 0.06),
+    inset 0px 8px 8px rgba(255, 255, 255, 0.03),
+    0px -1px 1px rgba(0, 0, 0, 0.02),
+    0px -4px 4px rgba(0, 0, 0, 0.04),
+    0px -8px 8px rgba(0, 0, 0, 0.06);
+  border: solid 1px hsl(243 75% 59% / 0.3);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition:
+    box-shadow var(--transition),
+    border var(--transition),
+    background-color var(--transition);
+}
+
+.clean-btn-sm {
+  font-size: 0.8rem;
+  padding: 0.35em 0.7em 0.35em 0.8em;
+  --border-radius: 20px;
+}
+
+.clean-btn::before {
+  content: "";
+  position: absolute;
+  top: calc(0px - var(--padding));
+  left: calc(0px - var(--padding));
+  width: calc(100% + var(--padding) * 2);
+  height: calc(100% + var(--padding) * 2);
+  border-radius: calc(var(--border-radius) + var(--padding));
+  pointer-events: none;
+  background-image: linear-gradient(0deg, #0004, #000a);
+  z-index: -1;
+  transition:
+    box-shadow var(--transition),
+    filter var(--transition);
+  box-shadow:
+    0 -8px 8px -6px transparent inset,
+    0 -16px 16px -8px transparent inset,
+    1px 1px 1px hsl(243 75% 59% / 0.15),
+    2px 2px 2px hsl(243 75% 59% / 0.08),
+    -1px -1px 1px #0002,
+    -2px -2px 2px #0001;
+}
+
+.clean-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: linear-gradient(
+    0deg,
+    #fff,
+    hsl(var(--highlight-color-hue), 100%, 70%),
+    hsla(var(--highlight-color-hue), 100%, 70%, 50%),
+    8%,
+    transparent
+  );
+  background-position: 0 0;
+  opacity: 0;
+  transition:
+    opacity var(--transition),
+    filter var(--transition);
+}
+
+.clean-btn-letter {
+  position: relative;
+  display: inline-block;
+  color: hsl(240 10% 70%);
+  animation: clean-letter-anim 2s ease-in-out infinite;
+  transition:
+    color var(--transition),
+    text-shadow var(--transition);
+}
+
+@keyframes clean-letter-anim {
+  50% {
+    text-shadow: 0 0 3px hsl(243 75% 80% / 0.6);
+    color: hsl(0 0% 100%);
+  }
+}
+
+.clean-btn-svg {
+  flex-shrink: 0;
+  height: 16px;
+  width: 16px;
+  margin-right: 0.4rem;
+  color: hsl(243 75% 70%);
+  animation: clean-flicker 2s linear infinite;
+  animation-delay: 0.5s;
+  filter: drop-shadow(0 0 2px hsl(243 75% 59% / 0.6));
+  transition:
+    color var(--transition),
+    filter var(--transition);
+}
+
+@keyframes clean-flicker {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.clean-btn-txt-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 3.2em;
+}
+
+.clean-btn-txt-1,
+.clean-btn-txt-2 {
+  position: absolute;
+  word-spacing: -0.2em;
+}
+
+.clean-btn-txt-1 {
+  animation: clean-appear-anim 1s ease-in-out forwards;
+}
+
+.clean-btn-txt-2 {
+  opacity: 0;
+}
+
+@keyframes clean-appear-anim {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.clean-btn:focus .clean-btn-txt-1 {
+  animation: clean-opacity-anim 0.3s ease-in-out forwards;
+  animation-delay: 1s;
+}
+
+.clean-btn:focus .clean-btn-txt-2 {
+  animation: clean-opacity-anim 0.3s ease-in-out reverse forwards;
+  animation-delay: 1s;
+}
+
+@keyframes clean-opacity-anim {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.clean-btn:focus .clean-btn-letter {
+  animation:
+    clean-focused-letter-anim 1s ease-in-out forwards,
+    clean-letter-anim 1.2s ease-in-out infinite;
+  animation-delay: 0s, 1s;
+}
+
+@keyframes clean-focused-letter-anim {
+  0%, 100% { filter: blur(0px); }
+  50% {
+    transform: scale(2);
+    filter: blur(10px) brightness(150%)
+      drop-shadow(-36px 12px 12px hsl(243, 100%, 70%));
+  }
+}
+
+.clean-btn:focus .clean-btn-svg {
+  animation-duration: 1.2s;
+  animation-delay: 0.2s;
+}
+
+.clean-btn:focus::before {
+  box-shadow:
+    0 -8px 12px -6px hsl(0 0% 100% / 0.2) inset,
+    0 -16px 16px -8px hsl(243, 100%, 70%, 20%) inset,
+    1px 1px 1px hsl(0 0% 100% / 0.2),
+    2px 2px 2px hsl(0 0% 100% / 0.06),
+    -1px -1px 1px #0002,
+    -2px -2px 2px #0001;
+}
+
+.clean-btn:focus::after {
+  opacity: 0.6;
+  mask-image: linear-gradient(0deg, #fff, transparent);
+  filter: brightness(100%);
+}
+
+/* Active */
+.clean-btn:active {
+  border: solid 1px hsl(243, 100%, 80%, 70%);
+  background-color: hsl(243, 50%, 20%, 0.5);
+}
+
+.clean-btn:active::before {
+  box-shadow:
+    0 -8px 12px -6px #fffa inset,
+    0 -16px 16px -8px hsl(243, 100%, 70%, 80%) inset,
+    1px 1px 1px #fff4,
+    2px 2px 2px #fff2,
+    -1px -1px 1px #0002,
+    -2px -2px 2px #0001;
+}
+
+.clean-btn:active::after {
+  opacity: 1;
+  mask-image: linear-gradient(0deg, #fff, transparent);
+  filter: brightness(200%);
+}
+
+.clean-btn:active .clean-btn-letter {
+  text-shadow: 0 0 1px hsl(243, 100%, 90%, 90%);
+  animation: none;
+  color: #fff;
+}
+
+/* Hover */
+.clean-btn:hover {
+  border: solid 1px hsl(243, 100%, 80%, 40%);
+}
+
+.clean-btn:hover::before {
+  box-shadow:
+    0 -8px 8px -6px #fffa inset,
+    0 -16px 16px -8px hsl(243, 100%, 70%, 30%) inset,
+    1px 1px 1px #fff2,
+    2px 2px 2px #fff1,
+    -1px -1px 1px #0002,
+    -2px -2px 2px #0001;
+}
+
+.clean-btn:hover::after {
+  opacity: 1;
+  mask-image: linear-gradient(0deg, #fff, transparent);
+}
+
+.clean-btn:hover .clean-btn-svg {
+  color: #fff;
+  filter: drop-shadow(0 0 3px hsl(243, 100%, 70%))
+    drop-shadow(0 -4px 6px #0009);
+  animation: none;
+}
+
+.clean-btn:hover .clean-btn-letter {
+  color: #fff;
+}
+
+.clean-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.clean-btn:disabled:hover {
+  border: solid 1px hsl(243 75% 59% / 0.3);
+}
+
+.clean-btn:disabled:hover::before,
+.clean-btn:disabled:hover::after {
+  box-shadow: none;
+  opacity: 0;
+}
