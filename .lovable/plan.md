@@ -1,23 +1,28 @@
 
 
-# Show Error Toast for Unsupported File Formats
+## Mobile/PWA UI Audit Results and Fix Plan
 
-## Problem
-When users drop or select unsupported files, they're silently ignored — no feedback at all.
+### What looks good (no changes needed)
+- Home page: hero, features grid, steps, CTA, footer — all properly aligned
+- Pricing page: cards stack vertically, text centered, no overflow
+- Install page: cards stack vertically, instructions readable
+- Auth page: login form centered and well-sized
+- Footer: compact 2-column layout works well
+- Navbar: logo + hamburger, mobile menu opens cleanly
+- Mobile menu: links and buttons properly spaced
 
-## Solution
-In `FileDropZone.tsx`, after filtering files, check if any were rejected. If so, show a sonner toast listing the rejected file names and supported formats.
+### Issue found: Settings page preset buttons overflow
 
-### Changes to `src/components/FileDropZone.tsx`
-1. Import `toast` from `sonner`
-2. In both `handleDrop` and `handleChange`:
-   - Get all files, partition into accepted and rejected using `isAcceptedFile`
-   - If rejected files exist, show `toast.error` with rejected file names and a hint of supported formats
-   - Continue passing accepted files to `onFilesSelected` as before
+On the Settings page at 390px width, the preset buttons (with badge + description text) extend beyond the screen edge, causing horizontal scrolling. The text "Strip everything — maximum..." gets clipped.
 
-Example toast message:
-> **Unsupported file(s) skipped**  
-> `photo.webp, doc.pages` — Supported formats: JPG, PNG, TIFF, HEIC, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV, JSON, XML, TXT, ZIP
+### Fix
 
-Single file change, ~15 lines added.
+**File: `src/pages/Settings.tsx`** (lines 111-118)
+
+Change the preset buttons from inline horizontal layout to full-width stacked layout on mobile:
+- Make each preset button `w-full` on mobile, with text wrapping enabled
+- Use `flex-col` for the button content on small screens so the badge sits above the description
+- Alternatively, stack the buttons vertically with `flex-col md:flex-row` on the container and truncate/wrap the description text
+
+This is a single-file, ~5 line change.
 
