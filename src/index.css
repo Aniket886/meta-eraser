@@ -229,15 +229,18 @@
 
 .clean-btn-txt-wrapper {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  min-width: 3.2em;
 }
 
-.clean-btn-txt-1,
+.clean-btn-txt-1 {
+  display: inline-flex;
+}
+
 .clean-btn-txt-2 {
   position: absolute;
-  word-spacing: -0.2em;
+  left: 0;
+  top: 0;
 }
 
 .clean-btn-txt-1 {
