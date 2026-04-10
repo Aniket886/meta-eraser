@@ -62,11 +62,30 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Load credits
+  // Load credits + realtime sync
   useEffect(() => {
-    if (user) {
-      getCredits(user.id).then(setCredits);
-    }
+    if (!user) return;
+    getCredits(user.id).then(setCredits);
+
+    const channel = supabase
+      .channel("dashboard-credits")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_credits", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const row = payload.new as any;
+          if (row) {
+            setCredits({
+              balance: row.balance,
+              free_cleans_today: row.free_cleans_today,
+              last_free_reset: row.last_free_reset,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const settings = loadSettings();
