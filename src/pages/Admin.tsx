@@ -1,5 +1,4 @@
 import Navbar from "@/components/Navbar";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +12,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import AdminCreditManager from "@/components/AdminCreditManager";
 
 interface UserRow {
   id: string;
@@ -20,6 +20,7 @@ interface UserRow {
   display_name: string | null;
   role: string;
   created_at: string;
+  credits: number;
 }
 
 const ROLES = ["user", "admin", "moderator"] as const;
@@ -44,6 +45,13 @@ const Admin = () => {
       .from("profiles")
       .select("id, email, display_name, created_at");
 
+    const { data: allCredits } = await supabase
+      .from("user_credits")
+      .select("user_id, balance");
+
+    const creditMap = new Map<string, number>();
+    allCredits?.forEach((c) => creditMap.set(c.user_id, c.balance));
+
     if (profiles) {
       setUsers(
         profiles.map((p) => ({
@@ -52,6 +60,7 @@ const Admin = () => {
           display_name: p.display_name,
           role: roleMap.get(p.id) || "user",
           created_at: p.created_at,
+          credits: creditMap.get(p.id) ?? 0,
         }))
       );
     }
@@ -71,13 +80,11 @@ const Admin = () => {
     setUpdatingId(userId);
 
     try {
-      // Remove existing role
       await supabase
         .from("user_roles")
         .delete()
         .eq("user_id", userId);
 
-      // If new role isn't default "user", insert it
       if (newRole !== "user") {
         const { error } = await supabase
           .from("user_roles")
@@ -116,10 +123,10 @@ const Admin = () => {
       <Navbar />
 
       <main className="flex-1 pt-24 pb-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <h1 className="text-3xl font-heading font-bold mb-8">Admin Panel</h1>
+        <div className="container mx-auto max-w-6xl space-y-8">
+          <h1 className="text-3xl font-heading font-bold">Admin Panel</h1>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((s) => (
               <div key={s.label} className="glass rounded-lg p-5">
                 <div className="flex items-center gap-3 mb-2">
@@ -130,6 +137,8 @@ const Admin = () => {
               </div>
             ))}
           </div>
+
+          <AdminCreditManager />
 
           <div className="glass rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
@@ -152,6 +161,7 @@ const Admin = () => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Credits</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
                   </TableRow>
@@ -159,7 +169,7 @@ const Admin = () => {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                         No users found
                       </TableCell>
                     </TableRow>
@@ -170,6 +180,11 @@ const Admin = () => {
                           {user.display_name || "—"}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="font-mono">
+                            {user.credits}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           {user.id === currentUser?.id ? (
                             <Badge variant="default">{user.role}</Badge>
