@@ -55,21 +55,34 @@ const getFileIcon = (type: string) => {
 const FileDropZone = ({ onFilesSelected, disabled, compact }: FileDropZoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
 
+  const showRejectedToast = (rejected: File[]) => {
+    const names = rejected.map(f => f.name).join(", ");
+    toast.error("Unsupported file(s) skipped", {
+      description: `${names} — Supported: JPG, PNG, TIFF, HEIC, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV, JSON, XML, TXT, ZIP`,
+    });
+  };
+
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
       if (disabled) return;
-      const files = Array.from(e.dataTransfer.files).filter(isAcceptedFile);
-      if (files.length) onFilesSelected(files);
+      const all = Array.from(e.dataTransfer.files);
+      const accepted = all.filter(isAcceptedFile);
+      const rejected = all.filter(f => !isAcceptedFile(f));
+      if (rejected.length) showRejectedToast(rejected);
+      if (accepted.length) onFilesSelected(accepted);
     },
     [onFilesSelected, disabled]
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files).filter(isAcceptedFile);
-      if (files.length) onFilesSelected(files);
+      const all = Array.from(e.target.files);
+      const accepted = all.filter(isAcceptedFile);
+      const rejected = all.filter(f => !isAcceptedFile(f));
+      if (rejected.length) showRejectedToast(rejected);
+      if (accepted.length) onFilesSelected(accepted);
     }
   };
 
