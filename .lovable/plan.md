@@ -1,19 +1,23 @@
 
 
-# Fix HEIC File Upload for iPhone Users
+# Show Error Toast for Unsupported File Formats
 
 ## Problem
-The FileDropZone filters files by MIME type (`ACCEPTED_TYPES.includes(f.type)`), but iPhone HEIC files often have an empty or unrecognized MIME type in browsers. The backend processing code (heic2any conversion, EXIF extraction) already exists — the files are just being rejected at the upload gate.
+When users drop or select unsupported files, they're silently ignored — no feedback at all.
 
 ## Solution
-Update the file filtering in `FileDropZone.tsx` to also check the file extension when the MIME type is empty or unrecognized. This is a single-file fix.
+In `FileDropZone.tsx`, after filtering files, check if any were rejected. If so, show a sonner toast listing the rejected file names and supported formats.
 
 ### Changes to `src/components/FileDropZone.tsx`
+1. Import `toast` from `sonner`
+2. In both `handleDrop` and `handleChange`:
+   - Get all files, partition into accepted and rejected using `isAcceptedFile`
+   - If rejected files exist, show `toast.error` with rejected file names and a hint of supported formats
+   - Continue passing accepted files to `onFilesSelected` as before
 
-1. Add a helper function `isAcceptedFile(file: File)` that:
-   - First checks if `file.type` is in `ACCEPTED_TYPES` (existing behavior)
-   - If MIME type is empty/unrecognized, falls back to checking the file extension against `ACCEPTED_EXTENSIONS`
-2. Replace `ACCEPTED_TYPES.includes(f.type)` in both `handleDrop` and `handleChange` with the new helper
+Example toast message:
+> **Unsupported file(s) skipped**  
+> `photo.webp, doc.pages` — Supported formats: JPG, PNG, TIFF, HEIC, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV, JSON, XML, TXT, ZIP
 
-This is a ~10-line change in one file. No new dependencies needed — `heic2any` is already installed and the HEIC processing pipeline in `metadata.ts` is fully implemented.
+Single file change, ~15 lines added.
 
