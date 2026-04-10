@@ -277,7 +277,10 @@ async function extractMp4Metadata(
 
 // ── Clean ──
 
-export async function cleanFile(file: File): Promise<Blob> {
+export async function cleanFile(file: File, _settings?: import("./privacy-settings").PrivacySettings): Promise<Blob> {
+  // Settings are used for selective stripping — currently the clean functions
+  // strip everything; settings integration is handled at the caller level
+  // by checking shouldStripField before deciding to clean.
   if (isImage(file.type)) return cleanImage(file);
   if (isPdf(file.type)) return cleanPdf(file);
   if (isOoxml(file.type)) return cleanOoxml(file);

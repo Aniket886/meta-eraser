@@ -12,6 +12,8 @@ const Navbar = () => {
     { to: "/pricing", label: "Pricing" },
     { to: "/dashboard", label: "Dashboard" },
     { to: "/api", label: "API" },
+    { to: "/settings", label: "Settings" },
+    { to: "/install", label: "Install" },
   ];
 
   return (
