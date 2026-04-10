@@ -59,9 +59,7 @@ const FileDropZone = ({ onFilesSelected, disabled, compact }: FileDropZoneProps)
       e.preventDefault();
       setIsDragging(false);
       if (disabled) return;
-      const files = Array.from(e.dataTransfer.files).filter((f) =>
-        ACCEPTED_TYPES.includes(f.type)
-      );
+      const files = Array.from(e.dataTransfer.files).filter(isAcceptedFile);
       if (files.length) onFilesSelected(files);
     },
     [onFilesSelected, disabled]
