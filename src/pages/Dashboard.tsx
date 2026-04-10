@@ -324,8 +324,8 @@ const Dashboard = () => {
                 </Button>
               )}
               {auditCount > 0 && (
-                <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAllPdfReports}>
-                  <FileText className="h-4 w-4 mr-1" /> PDF Report ({auditCount})
+                <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAllPdfReports} disabled={generatingPdf === "__all__"}>
+                  {generatingPdf === "__all__" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileText className="h-4 w-4 mr-1" />} PDF Report ({auditCount})
                 </Button>
               )}
             </div>
