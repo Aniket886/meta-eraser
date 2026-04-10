@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   Coins, Download, Sparkles, ChevronDown, AlertTriangle, Trash2, Clock,
-  FileDown, ClipboardList, Archive,
+  FileDown, ClipboardList, Archive, FileText,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { extractMetadata, cleanFile, downloadBlob, type MetadataMap } from "@/lib/metadata";
@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addHistoryEntry } from "@/lib/processing-history";
 import { getCredits, useCredit, hasCreditsAvailable, availableCleans, type UserCredits } from "@/lib/credits";
 import { useAuth } from "@/hooks/useAuth";
+import { generatePdfReport } from "@/lib/pdf-report";
 
 interface FileJob {
   id: string;
@@ -203,6 +204,15 @@ const Dashboard = () => {
     if (reports.length) downloadBatchAuditReport(reports);
   }, [files]);
 
+  const handleDownloadPdfReport = useCallback((report: AuditReport) => {
+    generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email });
+  }, [user]);
+
+  const handleDownloadAllPdfReports = useCallback(() => {
+    const reports = files.filter((f) => f.auditReport).map((f) => f.auditReport!);
+    if (reports.length) generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email });
+  }, [files, user]);
+
   const handleDownload = useCallback((file: FileJob) => {
     if (!file.cleanedBlob) return;
     const cleanName = file.isZip ? file.name.replace(/\.zip$/i, "_clean.zip") : file.name.replace(/(\.[^.]+)$/, "_clean$1");
@@ -279,6 +289,11 @@ const Dashboard = () => {
                   <ClipboardList className="h-4 w-4 mr-1" /> Audit Reports ({auditCount})
                 </Button>
               )}
+              {auditCount > 0 && (
+                <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAllPdfReports}>
+                  <FileText className="h-4 w-4 mr-1" /> PDF Report ({auditCount})
+                </Button>
+              )}
             </div>
           )}
 
@@ -328,6 +343,11 @@ const Dashboard = () => {
                           {file.auditReport && (
                             <Button size="sm" variant="ghost" className="shrink-0" onClick={() => downloadAuditReport(file.auditReport!)}>
                               <ClipboardList className="h-4 w-4 mr-1" /> Audit
+                            </Button>
+                          )}
+                          {file.auditReport && (
+                            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => handleDownloadPdfReport(file.auditReport!)}>
+                              <FileText className="h-4 w-4 mr-1" /> PDF
                             </Button>
                           )}
                         </>
