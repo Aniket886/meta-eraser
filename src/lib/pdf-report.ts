@@ -22,6 +22,7 @@ const LIGHT_BG = hexToRgb("#141432");
 interface ReportOptions {
   userName?: string;
   userEmail?: string;
+  aiInsights?: string;
 }
 
 function addHeader(doc: jsPDF, pageNum: number, totalPages: number) {
