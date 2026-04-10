@@ -121,7 +121,7 @@ export function generatePdfReport(
   y += 40;
 
   // Summary stats
-  doc.setFillColor(...SUCCESS[0], SUCCESS[1], SUCCESS[2]);
+  doc.setFillColor(SUCCESS[0], SUCCESS[1], SUCCESS[2]);
   doc.roundedRect(MARGIN, y, CONTENT_W / 2 - 4, 18, 2, 2, "F");
   doc.setFontSize(16);
   doc.setTextColor(...WHITE);
