@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Shield, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 const Navbar = () => {
   const location = useLocation();
