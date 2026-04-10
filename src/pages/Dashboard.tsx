@@ -23,6 +23,7 @@ import { addHistoryEntry } from "@/lib/processing-history";
 import { getCredits, useCredit, hasCreditsAvailable, availableCleans, type UserCredits } from "@/lib/credits";
 import { useAuth } from "@/hooks/useAuth";
 import { generatePdfReport } from "@/lib/pdf-report";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FileJob {
   id: string;
