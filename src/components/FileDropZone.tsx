@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { Upload, FileImage, FileText, File, Music, Film } from "lucide-react";
+import { toast } from "sonner";
 
 const ACCEPTED_TYPES = [
   "image/jpeg",
