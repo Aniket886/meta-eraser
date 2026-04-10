@@ -23,6 +23,10 @@ const SUPPORTED_EXTENSIONS: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".png": "image/png",
+  ".tiff": "image/tiff",
+  ".tif": "image/tiff",
+  ".heic": "image/heic",
+  ".heif": "image/heif",
   ".pdf": "application/pdf",
   ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -30,6 +34,9 @@ const SUPPORTED_EXTENSIONS: Record<string, string> = {
   ".mp3": "audio/mpeg",
   ".mp4": "video/mp4",
   ".mov": "video/quicktime",
+  ".json": "application/json",
+  ".xml": "application/xml",
+  ".txt": "text/plain",
 };
 
 function getExtension(name: string): string {

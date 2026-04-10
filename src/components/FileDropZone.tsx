@@ -4,6 +4,9 @@ import { Upload, FileImage, FileText, File, Music, Film } from "lucide-react";
 const ACCEPTED_TYPES = [
   "image/jpeg",
   "image/png",
+  "image/tiff",
+  "image/heic",
+  "image/heif",
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -12,12 +15,20 @@ const ACCEPTED_TYPES = [
   "audio/mp3",
   "video/mp4",
   "video/quicktime",
+  "application/json",
+  "application/xml",
+  "text/xml",
+  "text/plain",
   "application/zip",
   "application/x-zip-compressed",
 ];
 
 const ACCEPTED_EXTENSIONS = [
-  ".jpg", ".jpeg", ".png", ".pdf", ".docx", ".xlsx", ".pptx", ".mp3", ".mp4", ".mov", ".zip",
+  ".jpg", ".jpeg", ".png", ".tiff", ".tif", ".heic", ".heif",
+  ".pdf", ".docx", ".xlsx", ".pptx",
+  ".mp3", ".mp4", ".mov",
+  ".json", ".xml", ".txt",
+  ".zip",
 ];
 
 interface FileDropZoneProps {
@@ -83,7 +94,7 @@ const FileDropZone = ({ onFilesSelected, disabled, compact }: FileDropZoneProps)
         {isDragging ? "Drop files here" : "Drag & drop files here"}
       </p>
       <p className="text-sm text-muted-foreground mt-1">
-        or click to browse • JPG, PNG, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV, ZIP
+        or click to browse • JPG, PNG, TIFF, HEIC, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV, JSON, XML, TXT, ZIP
       </p>
     </label>
   );
