@@ -1,76 +1,59 @@
 
 
-# Phase 3: PWA Offline Mode, ZIP Batch Processing, Enterprise Privacy Controls
+# Expand File Type Support: TIFF, HEIC, JSON, XML, TXT
 
-## Overview
+## Current State
+Already supported: JPEG, PNG, PDF, DOCX, XLSX, PPTX, MP3, MP4, MOV, ZIP.
 
-Three features that make MetaClean work offline, handle ZIP archives, and give enterprises fine-grained control over what metadata gets removed.
+## What Gets Added
 
-## 1. PWA — Installable Offline App
+### 1. TIFF Images
+- Add `image/tiff` to accepted types and `.tiff`, `.tif` to extensions
+- `exifr` already supports TIFF — same extraction logic as JPEG/PNG
+- Cleaning: canvas redraw (browser can render TIFF), output as PNG (browsers can't encode TIFF)
+- Warning: output format changes from TIFF → PNG after cleaning
 
-Since all processing is already client-side, the app is a natural fit for PWA. No service workers needed for basic installability.
+### 2. HEIC Images
+- Add `image/heic`, `image/heif` to accepted types and `.heic`, `.heif` to extensions
+- **Limitation**: Browsers cannot natively decode HEIC. Use `heic2any` library to convert HEIC → JPEG in-browser before extraction
+- Extract metadata with `exifr` after conversion
+- Clean by canvas redraw (outputs as JPEG)
+- Warning shown: "HEIC converted to JPEG during cleaning"
 
-**Approach**: Simple manifest + install prompt page (no `vite-plugin-pwa` or service workers, which cause issues in the Lovable preview).
+### 3. JSON Files
+- Add `application/json` and `.json`
+- Extract: scan top-level keys for common metadata patterns — `author`, `creator`, `created`, `modified`, `generator`, `_metadata`, `$schema`, timestamps
+- Clean: remove identified metadata keys, preserve the rest
+- Output as reformatted JSON blob
 
-- Add `public/manifest.json` with app name, icons, `display: "standalone"`, theme color `#0a0a1a`
-- Add manifest link + mobile meta tags to `index.html`
-- Create `src/pages/Install.tsx` — an `/install` page with platform-specific install instructions and a "Install App" button that triggers the `beforeinstallprompt` event
-- Add install link to Navbar
-- Generate PWA icons (192x192, 512x512) as simple SVG-based PNGs in `public/`
+### 4. XML Files
+- Add `application/xml`, `text/xml` and `.xml`
+- Extract: parse with DOMParser, look for processing instructions, `<!-- comments -->`, and common metadata elements (`<meta>`, `<author>`, `<creator>`, `<dc:*>` Dublin Core)
+- Clean: strip comments, processing instructions, and metadata elements
+- Output cleaned XML
 
-**Result**: Users can install MetaClean to their home screen. All processing works offline since it's fully client-side.
+### 5. TXT Files
+- Add `text/plain` and `.txt`
+- Extract: scan for embedded metadata patterns — YAML frontmatter (`---` blocks), email headers (`From:`, `Date:`, `Subject:`), common header lines
+- Clean: strip detected frontmatter or header blocks
+- Warn if no metadata patterns found
 
-## 2. ZIP Batch Processing
+## New Dependencies
+- `heic2any` — HEIC → JPEG conversion in browser
 
-Accept `.zip` files, extract contents, process each supported file inside, then offer a cleaned ZIP download.
-
-- Add `application/zip` and `.zip` to `FileDropZone` accepted types
-- Add `isZip()` helper to `metadata.ts`
-- Create `src/lib/zip-processor.ts`:
-  - `extractZip(file: File)` — uses existing `jszip` to list and extract files
-  - `processZip(file: File)` — iterates entries, runs `extractMetadata` + `cleanFile` on each supported file, skips unsupported, repacks into a new ZIP
-  - Returns per-file audit data + cleaned ZIP blob
-- Update `Dashboard.tsx`:
-  - When a ZIP is dropped, show it as a parent job with expandable child entries
-  - "Clean" on a ZIP cleans all supported files inside and produces a cleaned ZIP
-  - Audit report includes per-file breakdown within the ZIP
-
-## 3. Enterprise Privacy Controls
-
-A settings panel that lets users choose which metadata categories to strip (or keep). Stored in `localStorage`.
-
-- Create `src/lib/privacy-settings.ts`:
-  - Interface `PrivacySettings` with toggles: `stripGps`, `stripAuthor`, `stripDates`, `stripCamera`, `stripSoftware`, `stripComments`, `stripAlbumArt`
-  - Default: all enabled (strip everything)
-  - `loadSettings()` / `saveSettings()` using localStorage
-- Create `src/pages/Settings.tsx` — `/settings` route:
-  - Toggle switches for each category with descriptions
-  - "Enterprise" preset (strip all), "Minimal" preset (GPS + author only), "Custom"
-  - Data retention control: adjust auto-delete timer (15min / 30min / 1hr / immediate)
-  - Export/import settings as JSON for team sharing
-- Update `cleanFile()` in `metadata.ts` to accept `PrivacySettings` and selectively strip fields
-- Update `Dashboard.tsx` to load settings and pass them to clean functions
-- Add Settings link to Navbar
-
-## Files Changed/Created
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `public/manifest.json` | New — PWA manifest |
-| `public/icon-192.svg`, `public/icon-512.svg` | New — PWA icons |
-| `index.html` | Add manifest link, mobile meta tags |
-| `src/pages/Install.tsx` | New — install instructions page |
-| `src/lib/zip-processor.ts` | New — ZIP extract/clean/repack logic |
-| `src/lib/privacy-settings.ts` | New — settings interface + localStorage |
-| `src/pages/Settings.tsx` | New — enterprise privacy controls UI |
-| `src/lib/metadata.ts` | Update `cleanFile` to accept privacy settings for selective stripping |
-| `src/components/FileDropZone.tsx` | Add `.zip` to accepted types |
-| `src/pages/Dashboard.tsx` | ZIP job handling, pass privacy settings to clean |
-| `src/components/Navbar.tsx` | Add Settings + Install links |
-| `src/App.tsx` | Add `/settings` and `/install` routes |
-| `src/pages/Index.tsx` | Update features list |
+| `src/lib/metadata.ts` | Add MIME helpers, extract/clean functions for TIFF, HEIC, JSON, XML, TXT |
+| `src/components/FileDropZone.tsx` | Add new types/extensions to accepted lists, update label |
+| `src/lib/zip-processor.ts` | Add new extensions to SUPPORTED_EXTENSIONS map |
+| `src/pages/Index.tsx` | Update features list to mention new formats |
 
-## Dependencies
-
-No new dependencies needed — `jszip` already handles ZIP files, and PWA uses a simple manifest without `vite-plugin-pwa`.
+## Technical Notes
+- TIFF extraction uses existing `exifr` — no new dependency needed
+- HEIC requires `heic2any` (~50KB) for browser-side conversion
+- JSON/XML/TXT metadata is heuristic-based (pattern matching on common keys) since these are freeform formats
+- The `isImage()` helper expands to include `image/tiff`, `image/heic`, `image/heif`
+- HEIC cleaning pipeline: HEIC → (heic2any) → JPEG blob → canvas redraw → clean JPEG output
 
