@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Shield, Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
+import metacleanLogo from "@/assets/metaclean-logo.png";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
