@@ -224,19 +224,27 @@ const Dashboard = () => {
   }, [toast]);
 
   const handleDownloadPdfReport = useCallback(async (report: AuditReport) => {
-    toast({ title: "Generating PDF…", description: "Fetching AI insights from Groq…" });
-    const insights = await fetchAiInsights([report]);
-    generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
-    toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+    setGeneratingPdf(report.filename);
+    try {
+      const insights = await fetchAiInsights([report]);
+      generatePdfReport([report], { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
+      toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+    } finally {
+      setGeneratingPdf(null);
+    }
   }, [user, fetchAiInsights, toast]);
 
   const handleDownloadAllPdfReports = useCallback(async () => {
     const reports = files.filter((f) => f.auditReport).map((f) => f.auditReport!);
     if (!reports.length) return;
-    toast({ title: "Generating PDF…", description: "Fetching AI insights from Groq…" });
-    const insights = await fetchAiInsights(reports);
-    generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
-    toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+    setGeneratingPdf("__all__");
+    try {
+      const insights = await fetchAiInsights(reports);
+      generatePdfReport(reports, { userName: user?.user_metadata?.full_name, userEmail: user?.email, aiInsights: insights });
+      toast({ title: "PDF Downloaded", description: "Report with AI insights saved." });
+    } finally {
+      setGeneratingPdf(null);
+    }
   }, [files, user, fetchAiInsights, toast]);
 
   const handleDownload = useCallback((file: FileJob) => {
