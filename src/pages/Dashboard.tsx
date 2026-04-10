@@ -369,9 +369,12 @@ const Dashboard = () => {
                         <AlertTriangle className="h-4 w-4 text-warning shrink-0 animate-pulse" />
                       )}
                       {file.status === "scanned" && (
-                        <Button size="sm" className="glow-primary-sm shrink-0 hover-lift" onClick={() => handleClean(file.id)}>
-                          <Sparkles className="h-4 w-4 mr-1" /> Clean
-                        </Button>
+                        <CleanButton
+                          onClick={() => handleClean(file.id)}
+                          label="Clean"
+                          activeLabel="Cleaning"
+                          size="sm"
+                        />
                       )}
                       {file.status === "cleaned" && (
                         <>
