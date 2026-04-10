@@ -5,9 +5,14 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Users, FileStack, HardDrive, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserRow {
   id: string;
@@ -17,42 +22,81 @@ interface UserRow {
   created_at: string;
 }
 
+const ROLES = ["user", "admin", "moderator"] as const;
+
 const Admin = () => {
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const { user: currentUser } = useAuth();
+  const { toast } = useToast();
+
+  const fetchUsers = async () => {
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role");
+
+    const roleMap = new Map<string, string>();
+    roles?.forEach((r) => roleMap.set(r.user_id, r.role));
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, email, display_name, created_at");
+
+    if (profiles) {
+      setUsers(
+        profiles.map((p) => ({
+          id: p.id,
+          email: p.email || "",
+          display_name: p.display_name,
+          role: roleMap.get(p.id) || "user",
+          created_at: p.created_at,
+        }))
+      );
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      // Fetch all user roles
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-
-      const roleMap = new Map<string, string>();
-      roles?.forEach((r) => roleMap.set(r.user_id, r.role));
-
-      // Fetch profiles
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, email, display_name, created_at");
-
-      if (profiles) {
-        setUsers(
-          profiles.map((p) => ({
-            id: p.id,
-            email: p.email || "",
-            display_name: p.display_name,
-            role: roleMap.get(p.id) || "user",
-            created_at: p.created_at,
-          }))
-        );
-      }
-      setLoading(false);
-    };
-
     fetchUsers();
   }, []);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    if (userId === currentUser?.id) {
+      toast({ title: "Cannot change your own role", variant: "destructive" });
+      return;
+    }
+
+    setUpdatingId(userId);
+
+    try {
+      // Remove existing role
+      await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId);
+
+      // If new role isn't default "user", insert it
+      if (newRole !== "user") {
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: newRole });
+
+        if (error) throw error;
+      }
+
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+      );
+
+      toast({ title: `Role updated to ${newRole}` });
+    } catch (err: any) {
+      toast({ title: "Failed to update role", description: err.message, variant: "destructive" });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const filtered = users.filter(
     (u) =>
@@ -75,7 +119,6 @@ const Admin = () => {
         <div className="container mx-auto max-w-6xl">
           <h1 className="text-3xl font-heading font-bold mb-8">Admin Panel</h1>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((s) => (
               <div key={s.label} className="glass rounded-lg p-5">
@@ -88,7 +131,6 @@ const Admin = () => {
             ))}
           </div>
 
-          {/* Users */}
           <div className="glass rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-heading font-semibold">Users</h2>
@@ -129,9 +171,26 @@ const Admin = () => {
                         </TableCell>
                         <TableCell className="text-muted-foreground">{user.email}</TableCell>
                         <TableCell>
-                          <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                            {user.role}
-                          </Badge>
+                          {user.id === currentUser?.id ? (
+                            <Badge variant="default">{user.role}</Badge>
+                          ) : (
+                            <Select
+                              value={user.role}
+                              onValueChange={(v) => handleRoleChange(user.id, v)}
+                              disabled={updatingId === user.id}
+                            >
+                              <SelectTrigger className="w-[130px] h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ROLES.map((r) => (
+                                  <SelectItem key={r} value={r}>
+                                    {r}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}
