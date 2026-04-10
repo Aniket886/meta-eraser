@@ -27,10 +27,10 @@ const Footer = () => (
         <div className="space-y-3">
           <h4 className="text-sm font-semibold font-heading">Supported Files</h4>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>JPG / JPEG</p>
-            <p>PNG</p>
-            <p>PDF</p>
-            <p>DOCX</p>
+            <p>JPG, PNG, TIFF, HEIC</p>
+            <p>PDF, DOCX, XLSX, PPTX</p>
+            <p>MP3, MP4, MOV</p>
+            <p>JSON, XML, TXT, ZIP</p>
           </div>
         </div>
 
@@ -43,8 +43,9 @@ const Footer = () => (
         </div>
       </div>
 
-      <div className="mt-8 pt-8 border-t border-border/50 text-center text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} MetaClean. All rights reserved.
+      <div className="mt-8 pt-8 border-t border-border/50 text-center text-sm text-muted-foreground space-y-1">
+        <p>&copy; {new Date().getFullYear()} MetaClean. All rights reserved.</p>
+        <p>Developed by <span className="text-foreground font-medium">Aniket Tegginamath</span></p>
       </div>
     </div>
   </footer>
