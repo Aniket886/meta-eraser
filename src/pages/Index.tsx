@@ -6,7 +6,7 @@ import { FileDropZone } from "@/components/FileDropZone";
 import { Link } from "react-router-dom";
 import {
   Shield, Zap, Eye, Upload, Sparkles, Download,
-  FileImage, FileText, File, Lock, Clock
+  FileImage, FileText, File, Lock, Clock, Archive, Wifi,
 } from "lucide-react";
 
 const features = [
