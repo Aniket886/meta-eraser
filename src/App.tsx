@@ -14,6 +14,7 @@ import ApiDocs from "./pages/ApiDocs";
 import Settings from "./pages/Settings";
 import Install from "./pages/Install";
 import Profile from "./pages/Profile";
+import BuyCredits from "./pages/BuyCredits";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
