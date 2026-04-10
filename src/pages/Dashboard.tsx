@@ -289,6 +289,11 @@ const Dashboard = () => {
                   <ClipboardList className="h-4 w-4 mr-1" /> Audit Reports ({auditCount})
                 </Button>
               )}
+              {auditCount > 0 && (
+                <Button size="sm" variant="outline" className="animate-scale-in" onClick={handleDownloadAllPdfReports}>
+                  <FileText className="h-4 w-4 mr-1" /> PDF Report ({auditCount})
+                </Button>
+              )}
             </div>
           )}
 
@@ -338,6 +343,11 @@ const Dashboard = () => {
                           {file.auditReport && (
                             <Button size="sm" variant="ghost" className="shrink-0" onClick={() => downloadAuditReport(file.auditReport!)}>
                               <ClipboardList className="h-4 w-4 mr-1" /> Audit
+                            </Button>
+                          )}
+                          {file.auditReport && (
+                            <Button size="sm" variant="ghost" className="shrink-0" onClick={() => handleDownloadPdfReport(file.auditReport!)}>
+                              <FileText className="h-4 w-4 mr-1" /> PDF
                             </Button>
                           )}
                         </>
