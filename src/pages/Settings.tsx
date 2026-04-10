@@ -108,11 +108,11 @@ const Settings = () => {
               <CardTitle className="text-lg">Presets</CardTitle>
               <CardDescription>Quick-apply a privacy profile.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-3">
+            <CardContent className="flex flex-col sm:flex-row flex-wrap gap-3">
               {Object.entries(PRESETS).map(([key, preset]) => (
-                <Button key={key} variant="outline" size="sm" className="hover-lift" onClick={() => applyPreset(key)}>
-                  <Badge variant="secondary" className="mr-2">{preset.label}</Badge>
-                  {preset.description}
+                <Button key={key} variant="outline" size="sm" className="hover-lift w-full sm:w-auto h-auto whitespace-normal text-left" onClick={() => applyPreset(key)}>
+                  <Badge variant="secondary" className="mr-2 shrink-0">{preset.label}</Badge>
+                  <span className="break-words">{preset.description}</span>
                 </Button>
               ))}
             </CardContent>
