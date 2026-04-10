@@ -8,14 +8,14 @@
   "theme_color": "#0a0a1a",
   "icons": [
     {
-      "src": "/icon-192.svg",
+      "src": "/metaclean-logo.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png"
     },
     {
-      "src": "/icon-512.svg",
+      "src": "/metaclean-logo.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png"
     }
   ]
 }
