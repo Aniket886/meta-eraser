@@ -67,9 +67,7 @@ const FileDropZone = ({ onFilesSelected, disabled, compact }: FileDropZoneProps)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files).filter((f) =>
-        ACCEPTED_TYPES.includes(f.type)
-      );
+      const files = Array.from(e.target.files).filter(isAcceptedFile);
       if (files.length) onFilesSelected(files);
     }
   };
