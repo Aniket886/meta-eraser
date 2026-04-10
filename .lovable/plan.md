@@ -1,83 +1,76 @@
 
 
-# Phase 2: New File Types, Batch Operations, API Access, Audit Reports
+# Phase 3: PWA Offline Mode, ZIP Batch Processing, Enterprise Privacy Controls
 
-## What Gets Built
+## Overview
 
-### 1. New File Type Support (MP3, MP4, MOV, XLSX, PPTX)
+Three features that make MetaClean work offline, handle ZIP archives, and give enterprises fine-grained control over what metadata gets removed.
 
-**MP3** — use `mp3tag.js` library
-- Extract: ID3v1/v2 tags (title, artist, album, year, genre, comment, album art reference)
-- Clean: Remove all ID3 tags by saving with `id3v2: { include: false }`, `id3v1: { include: false }`
-- Non-removable: duration, bitrate (structural)
+## 1. PWA — Installable Offline App
 
-**MP4/MOV** — use `mp4box.js` library
-- Extract: Parse moov box for creation date, encoder, GPS, title from udta/meta atoms
-- Clean: Cannot reliably strip moov metadata client-side without re-muxing. Strategy: extract and display metadata, warn user that video metadata cleaning has limitations, strip what we can from the udta box
-- Non-removable: codec, resolution, duration, framerate
+Since all processing is already client-side, the app is a natural fit for PWA. No service workers needed for basic installability.
 
-**XLSX** — already using `jszip` (OOXML format, same as DOCX)
-- Extract: Parse `docProps/core.xml` and `docProps/app.xml` (author, title, company, dates)
-- Clean: Same approach as DOCX — rewrite XML properties with empty values
+**Approach**: Simple manifest + install prompt page (no `vite-plugin-pwa` or service workers, which cause issues in the Lovable preview).
 
-**PPTX** — same OOXML approach as DOCX/XLSX
-- Extract/Clean: Identical to DOCX (same ZIP + docProps structure)
+- Add `public/manifest.json` with app name, icons, `display: "standalone"`, theme color `#0a0a1a`
+- Add manifest link + mobile meta tags to `index.html`
+- Create `src/pages/Install.tsx` — an `/install` page with platform-specific install instructions and a "Install App" button that triggers the `beforeinstallprompt` event
+- Add install link to Navbar
+- Generate PWA icons (192x192, 512x512) as simple SVG-based PNGs in `public/`
 
-### 2. Batch Upload & "Clean All"
-- Update `FileDropZone` accepted types to include `.mp3, .mp4, .mov, .xlsx, .pptx`
-- Add a "Clean All" button in the Dashboard header that cleans all scanned files at once
-- Add a "Download All" button that triggers sequential downloads of all cleaned files
-- Show batch progress (e.g., "Cleaning 3 of 7 files...")
+**Result**: Users can install MetaClean to their home screen. All processing works offline since it's fully client-side.
 
-### 3. API Access Page
-- New `/api` route with documentation page
-- Provide a simple REST-like interface using browser-local processing (no backend needed)
-- Show code snippets (curl, JS fetch) for how to use MetaClean programmatically
-- Since there's no backend yet, this is a **documentation page** describing the planned API endpoints
-- Endpoints documented: `POST /api/scan`, `POST /api/clean`, `GET /api/download/:id`
+## 2. ZIP Batch Processing
 
-### 4. Audit Report
-- After cleaning, generate a structured audit report per file showing:
-  - File name, type, size, timestamp
-  - Table of all fields found: field name, original value, status (removed/kept), reason if kept
-  - Summary: X fields removed, Y fields kept (structural)
-- "Download Audit Report" button generates a JSON file (or formatted text)
-- Add a "Download All Reports" button for batch audit export
-- Store `metadataBefore` separately from `metadata` on the FileJob so we can show the diff
+Accept `.zip` files, extract contents, process each supported file inside, then offer a cleaned ZIP download.
 
-## New Dependencies
-- `mp3tag.js` — MP3 ID3 tag read/write/remove
-- `mp4box` — MP4/MOV metadata parsing
+- Add `application/zip` and `.zip` to `FileDropZone` accepted types
+- Add `isZip()` helper to `metadata.ts`
+- Create `src/lib/zip-processor.ts`:
+  - `extractZip(file: File)` — uses existing `jszip` to list and extract files
+  - `processZip(file: File)` — iterates entries, runs `extractMetadata` + `cleanFile` on each supported file, skips unsupported, repacks into a new ZIP
+  - Returns per-file audit data + cleaned ZIP blob
+- Update `Dashboard.tsx`:
+  - When a ZIP is dropped, show it as a parent job with expandable child entries
+  - "Clean" on a ZIP cleans all supported files inside and produces a cleaned ZIP
+  - Audit report includes per-file breakdown within the ZIP
+
+## 3. Enterprise Privacy Controls
+
+A settings panel that lets users choose which metadata categories to strip (or keep). Stored in `localStorage`.
+
+- Create `src/lib/privacy-settings.ts`:
+  - Interface `PrivacySettings` with toggles: `stripGps`, `stripAuthor`, `stripDates`, `stripCamera`, `stripSoftware`, `stripComments`, `stripAlbumArt`
+  - Default: all enabled (strip everything)
+  - `loadSettings()` / `saveSettings()` using localStorage
+- Create `src/pages/Settings.tsx` — `/settings` route:
+  - Toggle switches for each category with descriptions
+  - "Enterprise" preset (strip all), "Minimal" preset (GPS + author only), "Custom"
+  - Data retention control: adjust auto-delete timer (15min / 30min / 1hr / immediate)
+  - Export/import settings as JSON for team sharing
+- Update `cleanFile()` in `metadata.ts` to accept `PrivacySettings` and selectively strip fields
+- Update `Dashboard.tsx` to load settings and pass them to clean functions
+- Add Settings link to Navbar
 
 ## Files Changed/Created
 
 | File | Change |
 |------|--------|
-| `src/lib/metadata.ts` | Add extract/clean functions for MP3, MP4/MOV, XLSX, PPTX |
-| `src/lib/audit.ts` | New — audit report generation (JSON export) |
-| `src/components/FileDropZone.tsx` | Expand accepted types and update label |
-| `src/pages/Dashboard.tsx` | Add batch actions, audit report buttons, store before/after metadata |
-| `src/pages/ApiDocs.tsx` | New — API documentation page |
-| `src/App.tsx` | Add `/api` route |
-| `src/components/Navbar.tsx` | Add API Docs link |
-| `src/pages/Index.tsx` | Update features list with new file types |
+| `public/manifest.json` | New — PWA manifest |
+| `public/icon-192.svg`, `public/icon-512.svg` | New — PWA icons |
+| `index.html` | Add manifest link, mobile meta tags |
+| `src/pages/Install.tsx` | New — install instructions page |
+| `src/lib/zip-processor.ts` | New — ZIP extract/clean/repack logic |
+| `src/lib/privacy-settings.ts` | New — settings interface + localStorage |
+| `src/pages/Settings.tsx` | New — enterprise privacy controls UI |
+| `src/lib/metadata.ts` | Update `cleanFile` to accept privacy settings for selective stripping |
+| `src/components/FileDropZone.tsx` | Add `.zip` to accepted types |
+| `src/pages/Dashboard.tsx` | ZIP job handling, pass privacy settings to clean |
+| `src/components/Navbar.tsx` | Add Settings + Install links |
+| `src/App.tsx` | Add `/settings` and `/install` routes |
+| `src/pages/Index.tsx` | Update features list |
 
-## Technical Details
+## Dependencies
 
-**FileJob interface changes:**
-- Add `metadataBefore?: MetadataMap` to preserve pre-clean state
-- On clean: save current metadata as `metadataBefore`, then update `metadata` with post-clean scan
-
-**Audit report structure:**
-```text
-{
-  filename, type, size, cleanedAt,
-  fields: [
-    { name, originalValue, status: "removed"|"kept", reason? }
-  ],
-  summary: { removed: N, kept: N }
-}
-```
-
-**MP4/MOV limitation:** Full metadata stripping of video containers requires re-muxing which is expensive client-side. We'll extract and display all metadata, clean what's accessible (udta atoms), and warn about fields that can't be removed without server-side processing.
+No new dependencies needed — `jszip` already handles ZIP files, and PWA uses a simple manifest without `vite-plugin-pwa`.
 
