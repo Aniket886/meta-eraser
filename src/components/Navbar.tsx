@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Shield, Menu, X } from "lucide-react";
+import { Shield, Menu, X, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   const links = [
     { to: "/", label: "Home" },
@@ -39,12 +41,25 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/auth">
-            <Button variant="ghost" size="sm">Log in</Button>
-          </Link>
-          <Link to="/auth?tab=signup">
-            <Button size="sm" className="glow-primary-sm">Sign up</Button>
-          </Link>
+          {user ? (
+            <>
+              <span className="text-sm text-muted-foreground truncate max-w-[150px]">
+                {user.user_metadata?.display_name || user.email}
+              </span>
+              <Button variant="ghost" size="sm" onClick={signOut} className="gap-1">
+                <LogOut className="h-4 w-4" /> Log out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/auth">
+                <Button variant="ghost" size="sm">Log in</Button>
+              </Link>
+              <Link to="/auth?tab=signup">
+                <Button size="sm" className="glow-primary-sm">Sign up</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -65,12 +80,20 @@ const Navbar = () => {
             </Link>
           ))}
           <div className="flex gap-2 pt-2">
-            <Link to="/auth" className="flex-1">
-              <Button variant="ghost" size="sm" className="w-full">Log in</Button>
-            </Link>
-            <Link to="/auth?tab=signup" className="flex-1">
-              <Button size="sm" className="w-full">Sign up</Button>
-            </Link>
+            {user ? (
+              <Button variant="ghost" size="sm" className="w-full gap-1" onClick={() => { signOut(); setMobileOpen(false); }}>
+                <LogOut className="h-4 w-4" /> Log out
+              </Button>
+            ) : (
+              <>
+                <Link to="/auth" className="flex-1" onClick={() => setMobileOpen(false)}>
+                  <Button variant="ghost" size="sm" className="w-full">Log in</Button>
+                </Link>
+                <Link to="/auth?tab=signup" className="flex-1" onClick={() => setMobileOpen(false)}>
+                  <Button size="sm" className="w-full">Sign up</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
