@@ -3,6 +3,7 @@ import type { MetadataMap } from "./metadata";
 export interface AuditField {
   name: string;
   originalValue: string;
+  afterValue: string;
   status: "removed" | "kept";
   reason?: string;
 }
