@@ -1,53 +1,83 @@
 
 
-# Phase 1: Client-Side Metadata Processing
-
-Since Supabase isn't enabled yet, all Phase 1 features will work entirely in the browser — no backend needed.
+# Phase 2: New File Types, Batch Operations, API Access, Audit Reports
 
 ## What Gets Built
 
-### 1. Real Metadata Extraction
-- **JPEG/PNG**: Use `exifr` library to extract EXIF data (GPS, camera, author, dates, software)
-- **PDF**: Use `pdf-lib` to read document properties (title, author, creator, dates, producer)
-- **DOCX**: Parse the ZIP structure, read `docProps/core.xml` and `docProps/app.xml` for properties (author, title, dates, revision count, application)
+### 1. New File Type Support (MP3, MP4, MOV, XLSX, PPTX)
 
-### 2. One-Click Clean
-- **JPEG/PNG**: Redraw image on a `<canvas>` element — this naturally strips all EXIF/metadata while preserving image quality
-- **PDF**: Use `pdf-lib` to create a copy with metadata fields cleared
-- **DOCX**: Unzip with `JSZip`, rewrite `core.xml` and `app.xml` with empty values, rezip
+**MP3** — use `mp3tag.js` library
+- Extract: ID3v1/v2 tags (title, artist, album, year, genre, comment, album art reference)
+- Clean: Remove all ID3 tags by saving with `id3v2: { include: false }`, `id3v1: { include: false }`
+- Non-removable: duration, bitrate (structural)
 
-### 3. Download Cleaned File
-- Generate a Blob from the cleaned file and trigger browser download
+**MP4/MOV** — use `mp4box.js` library
+- Extract: Parse moov box for creation date, encoder, GPS, title from udta/meta atoms
+- Clean: Cannot reliably strip moov metadata client-side without re-muxing. Strategy: extract and display metadata, warn user that video metadata cleaning has limitations, strip what we can from the udta box
+- Non-removable: codec, resolution, duration, framerate
 
-### 4. Auto-Delete After 1 Hour
-- Store file references with timestamps in component state
-- Run a `setInterval` timer that removes files older than 1 hour
-- Show remaining time on each file
+**XLSX** — already using `jszip` (OOXML format, same as DOCX)
+- Extract: Parse `docProps/core.xml` and `docProps/app.xml` (author, title, company, dates)
+- Clean: Same approach as DOCX — rewrite XML properties with empty values
 
-### 5. Dashboard Wiring
-- Replace mock metadata with real extracted data
-- Wire Clean button to actual cleaning logic
-- Wire Download button to trigger file save
-- Show scanning/cleaning progress states with transitions
+**PPTX** — same OOXML approach as DOCX/XLSX
+- Extract/Clean: Identical to DOCX (same ZIP + docProps structure)
+
+### 2. Batch Upload & "Clean All"
+- Update `FileDropZone` accepted types to include `.mp3, .mp4, .mov, .xlsx, .pptx`
+- Add a "Clean All" button in the Dashboard header that cleans all scanned files at once
+- Add a "Download All" button that triggers sequential downloads of all cleaned files
+- Show batch progress (e.g., "Cleaning 3 of 7 files...")
+
+### 3. API Access Page
+- New `/api` route with documentation page
+- Provide a simple REST-like interface using browser-local processing (no backend needed)
+- Show code snippets (curl, JS fetch) for how to use MetaClean programmatically
+- Since there's no backend yet, this is a **documentation page** describing the planned API endpoints
+- Endpoints documented: `POST /api/scan`, `POST /api/clean`, `GET /api/download/:id`
+
+### 4. Audit Report
+- After cleaning, generate a structured audit report per file showing:
+  - File name, type, size, timestamp
+  - Table of all fields found: field name, original value, status (removed/kept), reason if kept
+  - Summary: X fields removed, Y fields kept (structural)
+- "Download Audit Report" button generates a JSON file (or formatted text)
+- Add a "Download All Reports" button for batch audit export
+- Store `metadataBefore` separately from `metadata` on the FileJob so we can show the diff
 
 ## New Dependencies
-- `exifr` — EXIF extraction for images
-- `pdf-lib` — PDF metadata read/write
-- `jszip` — DOCX (ZIP) parsing and repacking
+- `mp3tag.js` — MP3 ID3 tag read/write/remove
+- `mp4box` — MP4/MOV metadata parsing
 
 ## Files Changed/Created
-- `src/lib/metadata.ts` — extraction + cleaning logic per file type
-- `src/pages/Dashboard.tsx` — wire real processing pipeline
-- `src/components/FileDropZone.tsx` — unchanged (already works)
+
+| File | Change |
+|------|--------|
+| `src/lib/metadata.ts` | Add extract/clean functions for MP3, MP4/MOV, XLSX, PPTX |
+| `src/lib/audit.ts` | New — audit report generation (JSON export) |
+| `src/components/FileDropZone.tsx` | Expand accepted types and update label |
+| `src/pages/Dashboard.tsx` | Add batch actions, audit report buttons, store before/after metadata |
+| `src/pages/ApiDocs.tsx` | New — API documentation page |
+| `src/App.tsx` | Add `/api` route |
+| `src/components/Navbar.tsx` | Add API Docs link |
+| `src/pages/Index.tsx` | Update features list with new file types |
 
 ## Technical Details
 
-The processing pipeline per file:
-1. User drops file → status `uploading` (instant, just reads into memory)
-2. Detect type → call appropriate extractor → status `scanned` with real metadata table
-3. User clicks Clean → call appropriate cleaner → status `cleaned`
-4. User clicks Download → browser save dialog
-5. After 1 hour → auto-remove from list
+**FileJob interface changes:**
+- Add `metadataBefore?: MetadataMap` to preserve pre-clean state
+- On clean: save current metadata as `metadataBefore`, then update `metadata` with post-clean scan
 
-All processing happens in-browser. No data leaves the user's machine.
+**Audit report structure:**
+```text
+{
+  filename, type, size, cleanedAt,
+  fields: [
+    { name, originalValue, status: "removed"|"kept", reason? }
+  ],
+  summary: { removed: N, kept: N }
+}
+```
+
+**MP4/MOV limitation:** Full metadata stripping of video containers requires re-muxing which is expensive client-side. We'll extract and display all metadata, clean what's accessible (udta atoms), and warn about fields that can't be removed without server-side processing.
 
