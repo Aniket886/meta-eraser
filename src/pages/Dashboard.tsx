@@ -20,6 +20,8 @@ import { isZip, processZip, type ZipEntry } from "@/lib/zip-processor";
 import { loadSettings } from "@/lib/privacy-settings";
 import { useToast } from "@/hooks/use-toast";
 import { addHistoryEntry } from "@/lib/processing-history";
+import { getCredits, useCredit, hasCreditsAvailable, availableCleans, type UserCredits } from "@/lib/credits";
+import { useAuth } from "@/hooks/useAuth";
 
 interface FileJob {
   id: string;
@@ -50,8 +52,16 @@ const Dashboard = () => {
   const [files, setFiles] = useState<FileJob[]>([]);
   const [, setTick] = useState(0);
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
-  const credits = 5;
+  const [credits, setCredits] = useState<UserCredits | null>(null);
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  // Load credits
+  useEffect(() => {
+    if (user) {
+      getCredits(user.id).then(setCredits);
+    }
+  }, [user]);
 
   const settings = loadSettings();
   const retentionMs = (settings.retentionMinutes || 60) * 60 * 1000;
@@ -107,13 +117,22 @@ const Dashboard = () => {
 
   const handleClean = useCallback(async (id: string) => {
     const file = files.find((f) => f.id === id);
-    if (!file) return;
+    if (!file || !user) return;
+
+    // Credit check
+    if (credits && !hasCreditsAvailable(credits)) {
+      toast({ title: "No credits remaining", description: "Purchase more credits to continue cleaning files.", variant: "destructive" });
+      return;
+    }
 
     setFiles((prev) =>
       prev.map((f) => (f.id === id ? { ...f, status: "cleaning" as const, metadataBefore: f.metadata ? { ...f.metadata } : undefined } : f))
     );
 
     try {
+      // Deduct credit
+      await useCredit(user.id);
+
       if (file.isZip) {
         const result = await processZip(file.originalFile, settings, (current, total) => {
           setBatchProgress(`Processing ${current} of ${total} in ZIP...`);
@@ -127,7 +146,7 @@ const Dashboard = () => {
           )
         );
         const processed = result.entries.filter((e) => e.supported).length;
-        addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: processed });
+        await addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: processed });
         toast({ title: "ZIP cleaned!", description: `${processed} files processed inside ${file.name}.` });
       } else {
         const metadataBefore = file.metadata ? { ...file.metadata } : {};
@@ -143,9 +162,12 @@ const Dashboard = () => {
               : f
           )
         );
-        addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: auditReport.summary.removed });
+        await addHistoryEntry({ fileName: file.name, fileType: file.type, fileSize: file.size, fieldsRemoved: auditReport.summary.removed });
         toast({ title: "File cleaned!", description: `${file.name} metadata has been removed.` });
       }
+
+      // Refresh credits
+      getCredits(user.id).then(setCredits);
     } catch {
       setFiles((prev) =>
         prev.map((f) =>
@@ -154,7 +176,7 @@ const Dashboard = () => {
       );
       toast({ title: "Cleaning failed", description: `Could not clean ${file.name}.`, variant: "destructive" });
     }
-  }, [files, toast, settings]);
+  }, [files, toast, settings, user, credits]);
 
   const handleCleanAll = useCallback(async () => {
     const scannedFiles = files.filter((f) => f.status === "scanned");
@@ -221,7 +243,7 @@ const Dashboard = () => {
               <Coins className="h-5 w-5 text-primary" />
               <div>
                 <div className="text-sm text-muted-foreground">Credits</div>
-                <div className="text-xl font-heading font-bold">{credits}</div>
+                <div className="text-xl font-heading font-bold">{credits ? availableCleans(credits) : "…"}</div>
               </div>
             </div>
           </div>
