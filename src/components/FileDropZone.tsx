@@ -23,6 +23,12 @@ const ACCEPTED_TYPES = [
   "application/x-zip-compressed",
 ];
 
+const isAcceptedFile = (file: File): boolean => {
+  if (ACCEPTED_TYPES.includes(file.type)) return true;
+  const ext = "." + file.name.split(".").pop()?.toLowerCase();
+  return ACCEPTED_EXTENSIONS.includes(ext);
+};
+
 const ACCEPTED_EXTENSIONS = [
   ".jpg", ".jpeg", ".png", ".tiff", ".tif", ".heic", ".heif",
   ".pdf", ".docx", ".xlsx", ".pptx",
