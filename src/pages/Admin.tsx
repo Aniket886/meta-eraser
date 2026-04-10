@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -7,7 +8,12 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Users, FileStack, HardDrive, Clock } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Users, FileStack, HardDrive, Clock, Trash2, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +36,7 @@ const Admin = () => {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -80,28 +87,48 @@ const Admin = () => {
     setUpdatingId(userId);
 
     try {
-      await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", userId);
+      await supabase.from("user_roles").delete().eq("user_id", userId);
 
       if (newRole !== "user") {
         const { error } = await supabase
           .from("user_roles")
           .insert({ user_id: userId, role: newRole });
-
         if (error) throw error;
       }
 
       setUsers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
       );
-
       toast({ title: `Role updated to ${newRole}` });
     } catch (err: any) {
       toast({ title: "Failed to update role", description: err.message, variant: "destructive" });
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (userId === currentUser?.id) {
+      toast({ title: "Cannot delete yourself", variant: "destructive" });
+      return;
+    }
+
+    setDeletingId(userId);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { user_id: userId },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      toast({ title: "User deleted", description: `${email} has been permanently removed.` });
+    } catch (err: any) {
+      toast({ title: "Failed to delete user", description: err.message, variant: "destructive" });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -164,12 +191,13 @@ const Admin = () => {
                     <TableHead>Credits</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Joined</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         No users found
                       </TableCell>
                     </TableRow>
@@ -209,6 +237,45 @@ const Admin = () => {
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {user.id !== currentUser?.id && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  disabled={deletingId === user.id}
+                                >
+                                  {deletingId === user.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete user permanently?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete <strong>{user.email}</strong> and all their data
+                                    (profile, credits, roles). They will need to create a new account to use the app again.
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteUser(user.id, user.email)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete permanently
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
